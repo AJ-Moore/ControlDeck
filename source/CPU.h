@@ -82,7 +82,92 @@ namespace ControlDeck{
 
 		void initialise();
 
+		void update(); 
+
 	private:
+
+		//!< Insert about 151 instructions here D:
+#pragma region 6502_Instructions 
+
+/***Implied Addressing Mode Instructions***/
+		//!< Software Interrupt 
+		void BRK_$00(); 
+
+		//!< Clears Carry Flag C
+		void CLC_$18(); 
+
+		//!< Clear Decimal Flag D :: Note Decimal Mode not supported on 2A03/07 CPU
+		void CLD_$D8();
+
+		//!< Clear Intterupt Disable Flag I
+		void CLI_$58();
+
+		//!< Clear Overflow Flag V
+		void CLV_$B8();
+
+		//!< Decrement X register by one 
+		void DEX_$CA(); 
+
+		//!< Decrement Y register by one 
+		void DEY_$88();
+
+		//!< Increment X register by one
+		void INX_$E8(); 
+
+		//!< Increment Y register by one 
+		void INY_$C8(); 
+
+		//!< Does Nothing :D
+		void NOP_$EA();
+
+		//!< Push (A) Accumulator onto stack
+		void PHA_$48();
+
+		//!< Push Processor Status onto stack 
+		void PHP_$08();
+
+		//!< Pull from stack to (A) Accumulator
+		void PLA_$68();
+
+		//!< Pull from stack to (P) Processor Status
+		void PLP_$28(); 
+
+		//!< Return from interrupt
+		void RTI_$40();
+
+		//!< Return from Subroutine 
+		void RTS_$60(); 
+
+		//!< Set Carry Flag C
+		void SEC_$38();
+
+		//!< Set Decimal Flag D
+		void SED_$f8();
+
+		//!< Set Intterupt Disabled Flag
+		void SEI_$78();
+
+		//!< Transfer Accumulator to X register 
+		void TAX_$AA();
+
+		//!< Transfer Accumulator to Y register
+		void TAY_$A8();
+
+		//!< Transfer Stack Pointer to X register
+		void TSX_$BA(); 
+
+		//!< Transfer X register to Accumulator 
+		void TXA_$8A(); 
+
+		//!< Transfer X register to Stack Pointer 
+		void TXS_$9A();
+
+		//!, Tranfer Y register to Accumulator 
+		void TYA_$98();
+
+
+#pragma endregion 151 instructions/ operation codes used by the 6502 
+
 		//!< The CPUS memory cache 64KB total Address range from $0 - $FFFF
 		UByte* cache; 
 
@@ -109,6 +194,17 @@ namespace ControlDeck{
 		U8 P; 
 
 	};
+
+	/***Processor Status Bits************ 
+		bit 0 | C = Carry
+				Z = Zero 
+				I = Interrupt Disabled 
+				D = Decimal Mode 
+				B = Break Command Flag 
+				----------------------
+				V = Overflow Flag 
+		bit 7 | S = Sign flag 
+	*************************************/
 
 	//!< Processor Status Flags
 	enum PFLAGS : U8{
