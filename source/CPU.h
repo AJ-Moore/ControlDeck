@@ -82,12 +82,36 @@ namespace ControlDeck{
 
 		void initialise();
 
+		//!< Fetch next instruction and execute 
 		void update(); 
+
+		U8 readMemory8(U16 Addr);
+		//U16 readMemory16(U16 Addr); 
+
+		//!< Used for writing U8 to perticular memory address 
+		//!< We use a writeMemory function in order to ensure that data is
+		//!< mirrored correctly... basically 
+		void writeMemory8(U16 Addr, U8 Data); 
+		//!< Haven't decide on whether necessary to have an additional function 
+		//!< for writing memory in case where operand makes use of 16 bits of 
+		//!< data... considering most data is actually handled in 8 bits.. meh
+		//!< I'll decide as and when necessary!
+		//void writeMemory16(U16 Addr, U16 Data);
+
+/** Useful Constants **/
+		//!< The location from which the stack begins 
+		const U8 STACK			=				0x0100; 
+
+		//!< Location of PRG ROM Upper Bank 
+		const U8 PRGROM_UPPER	=				0xC000;
+
+		//!< Location of PRG ROM Lower Bank
+		const U8 PRGROM_LOWER	=				0x8000; 
 
 	private:
 
 		//!< Insert about 151 instructions here D:
-#pragma region 6502_Instructions 
+#pragma region _6502_Instructions 
 
 /***Implied Addressing Mode Instructions***/
 		//!< Software Interrupt 
@@ -162,14 +186,19 @@ namespace ControlDeck{
 		//!< Transfer X register to Stack Pointer 
 		void TXS_$9A();
 
-		//!, Tranfer Y register to Accumulator 
-		void TYA_$98();
+		//!< Tranfer Y register to Accumulator 
+		void TYA_$98(); 
 
 
 #pragma endregion 151 instructions/ operation codes used by the 6502 
 
-		//!< The CPUS memory cache 64KB total Address range from $0 - $FFFF
-		UByte* cache; 
+//** Helper Functions **//
+		//!< Increments/ Decrements stack pointer by 1 to ensure wrap 
+		void incrementSP();
+		void decrementSP(); 
+
+		//!< The CPUS memory/ ram 64KB total Address range from $0 - $FFFF
+		UByte* RAM; 
 
 		//!< Program Counter - Holds the address of the next instruction
 		//!< split into first 8 bits PCL, last 8 bits PCH 
