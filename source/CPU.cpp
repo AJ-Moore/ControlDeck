@@ -12,6 +12,11 @@ namespace ControlDeck{
 		//!< The 6502 uses a 16 bit address bus $0 - $FFFF ($FFFF+1 possible addresses)
 		this->RAM = new UByte[0xFFFF+1];
 
+		//!< Initialise RAM to NAUGHT
+		for (U16 i = 0; i < 0xFFFF+1; i++){
+			this->RAM[i] = 0; 
+		}
+
 		//!< NOTE TO SELF : Some initialisations may want to be moved over or mirrored/ duplicated 
 		//!<				in 'reset' in order to ensure consistency between rom switching and
 		//!<				'hardware' resets
@@ -90,16 +95,25 @@ namespace ControlDeck{
 		//!< every 8 bytes in the range $2008-$3FFF
 		
 		//!< Initially check if within range or I/O regs and mirrors 
-		if (Addr < 0x3FFF){
+		if (Addr < 0x4000){
+			//!< Minus the starting position and get the remainder of the addr / 8 in order to establish 
+			//!< the bytes that should be mirrored (mByte -> byte to be mirrored)
+			U8 _mByte = (Addr - 0x2000) % 8 ;
+
+			//!< For every byte in range $2000 - $3FFF (kinda) 
+			for (U16 _m = _mByte; _m < 0x4000; _m+= 8){
+				this->RAM[0x2000 + _m] = Data; 
+			}
 
 		}
+
 
 
 
 	}
 
 	U8 CPU::readMemory8(U16 Addr){
-
+		return this->RAM[Addr];
 	}
 
 /** ======================= **/
@@ -162,22 +176,40 @@ namespace ControlDeck{
 		//!< Does nothing 
 	}
 	void CPU::PHA_$48(){
-		this->RAM[this->STACK + this->SP] = this->A; 
+		writeMemory8(this->STACK + this->SP, this->A); 
 		this->decrementSP();
 	}
 	void CPU::PHP_$08(){
-
+		writeMemory8(this->STACK + this->SP, this->P);
+		this->decrementSP();
 	}
 	void CPU::PLA_$68(){
+		this->incrementSP(); 
+		this->A = readMemory8(this->STACK + this->SP);
 
+		(this->A == 0) ? this->P |= PFLAGS::ZERO : this->P &= ~PFLAGS::ZERO;
+		(this->A & (1<<7)) ? this->P |= PFLAGS::NEGATIVE : this->P &= ~PFLAGS::NEGATIVE;
 	}
 	void CPU::PLP_$28(){
-
+		this->incrementSP(); 
+		this->P = readMemory8(this->STACK + this->SP); 
 	}
 	void CPU::RTI_$40(){
+		this->incrementSP(); 
+		this->P = readMemory8(this->STACK + this->SP);
 
+		//!< Get/ restore? the instructions address from memory ??
+		//!< Needs Checking
+		this->incrementSP();
+		U16 _l = readMemory8(this->STACK + this->SP);
+		this->incrementSP();
+		U16 _h = readMemory8(this->STACK + this->SP);
+
+		this->PC = _h | _l ;
+		
 	}
 	void CPU::RTS_$60(){
+		//this->incrementSP();
 
 	}
 	void CPU::SEC_$38(){

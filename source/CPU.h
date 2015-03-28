@@ -100,13 +100,13 @@ namespace ControlDeck{
 
 /** Useful Constants **/
 		//!< The location from which the stack begins 
-		const U8 STACK			=				0x0100; 
+		const U16 STACK			=				0x0100; 
 
 		//!< Location of PRG ROM Upper Bank 
-		const U8 PRGROM_UPPER	=				0xC000;
+		const U16 PRGROM_UPPER	=				0xC000;
 
 		//!< Location of PRG ROM Lower Bank
-		const U8 PRGROM_LOWER	=				0x8000; 
+		const U16 PRGROM_LOWER	=				0x8000; 
 
 	private:
 
@@ -209,7 +209,7 @@ namespace ControlDeck{
 		U8 SP; 
 
 		//!< Accumerlator - 8 bit register for storing the results of arithmetric & logic operations 
-		U8 A;
+		S8 A;
 
 		//!< Index register X - 8 bit register - counter or offset for perticular addressing modes
 		//!< Can be set to value recieved from memory, can be used to get or set value of stack pointer
