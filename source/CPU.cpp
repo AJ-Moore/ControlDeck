@@ -122,6 +122,11 @@ namespace ControlDeck{
 
 /***Implied Addressing Mode Instructions***/
 	void CPU::BRK_$00(){
+		this->PC++;
+		writeMemory8(this->STACK + this->SP, PC>>8); 
+		this->decrementSP(); 
+		writeMemory8(this->STACK + this->SP, PC);	
+		this->decrementSP();
 
 	}
 	void CPU::CLC_$18(){
@@ -137,7 +142,7 @@ namespace ControlDeck{
 		this->P &= ~(PFLAGS::OVER_FLOW); 
 	}
 	void CPU::DEX_$CA(){
-		this->X -= 1; 
+		this->X--; 
 
 		// If result of decriment is zero set zero flag 
 		(this->X == 0) ? this->PC |= PFLAGS::ZERO : this->PC &= ~PFLAGS::ZERO;
@@ -146,7 +151,7 @@ namespace ControlDeck{
 		(this->X & (1<<7)) ? this->PC |= PFLAGS::NEGATIVE : this->PC &= ~PFLAGS::NEGATIVE;
 	}
 	void CPU::DEY_$88(){
-		this->Y -= 1; 
+		this->Y--; 
 
 		// If result of decriment is zero set zero flag 
 		(this->Y == 0) ? this->PC |= PFLAGS::ZERO : this->PC &= ~PFLAGS::ZERO;
@@ -155,7 +160,7 @@ namespace ControlDeck{
 		(this->Y & (1<<7)) ? this->PC |= PFLAGS::NEGATIVE : this->PC &= ~PFLAGS::NEGATIVE;
 	}
 	void CPU::INX_$E8(){
-		this->X += 1; 
+		this->X++; 
 
 		// If result of decriment is zero set zero flag 
 		(this->X == 0) ? this->PC |= PFLAGS::ZERO : this->PC &= ~PFLAGS::ZERO;
@@ -164,7 +169,7 @@ namespace ControlDeck{
 		(this->X & (1<<7)) ? this->PC |= PFLAGS::NEGATIVE : this->PC &= ~PFLAGS::NEGATIVE;
 	}
 	void CPU::INY_$C8(){
-		this->Y += 1; 
+		this->Y++; 
 
 		// If result of decriment is zero set zero flag 
 		(this->Y == 0) ? this->PC |= PFLAGS::ZERO : this->PC &= ~PFLAGS::ZERO;
@@ -203,14 +208,17 @@ namespace ControlDeck{
 		this->incrementSP();
 		U16 _l = readMemory8(this->STACK + this->SP);
 		this->incrementSP();
-		U16 _h = readMemory8(this->STACK + this->SP);
+		U16 _h = readMemory8(this->STACK + this->SP)<<8;
 
 		this->PC = _h | _l ;
 		
 	}
 	void CPU::RTS_$60(){
-		//this->incrementSP();
-
+		this->incrementSP();
+		U16 _l = readMemory8(this->STACK + this->SP);
+		this->incrementSP();
+		U16 _h = readMemory8(this->STACK + this->SP)<<8; 
+		this->PC = _h | _l;
 	}
 	void CPU::SEC_$38(){
 		this->P |= PFLAGS::CARRY;
@@ -222,22 +230,33 @@ namespace ControlDeck{
 		this->P |= PFLAGS::INTERRUPT_DISABLED;
 	}
 	void CPU::TAX_$AA(){
+		this->X = this->A;
+		(this->X == 0) ? this->P |= PFLAGS::ZERO : this->P &= ~PFLAGS::ZERO;
+		(this->X & (1<<7)) ? this->P |= PFLAGS::NEGATIVE : this->P &= ~ PFLAGS::NEGATIVE;
 
 	}
 	void CPU::TAY_$A8(){
-
+		this->Y = this->A;
+		(this->Y == 0) ? this->P |= PFLAGS::ZERO : this->P &= ~PFLAGS::ZERO;
+		(this->Y & (1<<7)) ? this->P |= PFLAGS::NEGATIVE : this->P &= ~ PFLAGS::NEGATIVE;
 	}
 	void CPU::TSX_$BA(){
-
+		this->X = this->SP;
+		(this->X == 0) ? this->P |= PFLAGS::ZERO : this->P &= ~PFLAGS::ZERO;
+		(this->X & (1<<7)) ? this->P |= PFLAGS::NEGATIVE : this->P &= ~ PFLAGS::NEGATIVE;
 	}
 	void CPU::TXA_$8A(){
-
+		this->A = this->X;
+		(this->A == 0) ? this->P |= PFLAGS::ZERO : this->P &= ~PFLAGS::ZERO;
+		(this->A & (1<<7)) ? this->P |= PFLAGS::NEGATIVE : this->P &= ~ PFLAGS::NEGATIVE;
 	}
 	void CPU::TXS_$9A(){
-
+		this->SP = this->X;
 	}
 	void CPU::TYA_$98(){
-
+		this->A = this->Y;
+		(this->A == 0) ? this->P |= PFLAGS::ZERO : this->P &= ~PFLAGS::ZERO;
+		(this->A & (1<<7)) ? this->P |= PFLAGS::NEGATIVE : this->P &= ~ PFLAGS::NEGATIVE;
 	}
 
 
