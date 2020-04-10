@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29613.14
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ControlDeck", "ControlDeck\ControlDeck.vcxproj", "{0B3020F3-7AD9-49F8-BD78-A453CD651E66}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
+		Release|x64 = Release|x64
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{0B3020F3-7AD9-49F8-BD78-A453CD651E66}.Debug|x64.ActiveCfg = Debug|x64
+		{0B3020F3-7AD9-49F8-BD78-A453CD651E66}.Debug|x64.Build.0 = Debug|x64
+		{0B3020F3-7AD9-49F8-BD78-A453CD651E66}.Debug|x86.ActiveCfg = Debug|Win32
+		{0B3020F3-7AD9-49F8-BD78-A453CD651E66}.Debug|x86.Build.0 = Debug|Win32
+		{0B3020F3-7AD9-49F8-BD78-A453CD651E66}.Release|x64.ActiveCfg = Release|x64
+		{0B3020F3-7AD9-49F8-BD78-A453CD651E66}.Release|x64.Build.0 = Release|x64
+		{0B3020F3-7AD9-49F8-BD78-A453CD651E66}.Release|x86.ActiveCfg = Release|Win32
+		{0B3020F3-7AD9-49F8-BD78-A453CD651E66}.Release|x86.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {799ECDF9-8E07-478E-A64E-D16F4D4D0E8C}
+	EndGlobalSection
+EndGlobal
