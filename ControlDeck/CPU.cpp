@@ -51,9 +51,6 @@ namespace ControlDeck {
 				//!< Whats the default case?
 				break;
 			}
-
-			//Increment the program counter 
-			this->PC++;
 		}
 	}
 
@@ -134,6 +131,33 @@ namespace ControlDeck {
 		return mem;
 	}
 
+	void CPU::PushStack8(uint8 memory)
+	{
+		WriteMemory8(STACK + SP, memory);
+		DecrementSP();
+	}
+
+	void CPU::PushStack16(uint16 memory)
+	{
+		// Push high, low 
+		PushStack8(memory >> 8);
+		PushStack8(memory);
+	}
+
+	uint8 CPU::PopStack8()
+	{
+		IncrementSP();
+		return ReadMemory8(STACK + SP);
+	}
+
+	uint16 CPU::PopStack16()
+	{
+		// pop low - high
+		uint16 low = PopStack8();
+		uint16 high = PopStack8() << 8;
+		return high | low;
+	}
+
 	/** ======================= **/
 
 #pragma region _6502_Instructions 
@@ -141,71 +165,76 @@ namespace ControlDeck {
 #pragma region Implied Addressing Mode Instructions
 /***Implied Addressing Mode Instructions (25)***/
 	void CPU::BRK_$00() {
-		this->PC++;
 		WriteMemory8(this->STACK + this->SP, PC >> 8);
 		this->DecrementSP();
 		WriteMemory8(this->STACK + this->SP, PC);
 		this->DecrementSP();
-
+		this->PC++;
 	}
-	void CPU::CLC_$18() {
+	void CPU::CLC_$18()
+	{
 		this->ProcessorStatus &= ~(PFlags::CARRY);
+		PC++;
 	}
-	void CPU::CLD_$D8() {
+	void CPU::CLD_$D8()
+	{
 		this->ProcessorStatus &= ~(PFlags::DECIMAL_MODE);
+		PC++;
 	}
-	void CPU::CLI_$58() {
+	void CPU::CLI_$58()
+	{
 		this->ProcessorStatus &= ~(PFlags::INTERRUPT_DISABLED);
+		PC++;
 	}
-	void CPU::CLV_$B8() {
+	void CPU::CLV_$B8()
+	{
 		this->ProcessorStatus &= ~(PFlags::OVER_FLOW);
+		PC++;
 	}
-	void CPU::DEX_$CA() {
-		this->XReg--;
-
-		// If result of decriment is zero set zero flag 
-		(this->XReg == 0) ? this->PC |= PFlags::ZERO : this->PC &= ~PFlags::ZERO;
-
-		// If bit 7 is set, set negative flag 
-		(this->XReg & (1 << 7)) ? this->PC |= PFlags::NEGATIVE : this->PC &= ~PFlags::NEGATIVE;
+	void CPU::DEX_$CA()
+	{
+		XReg--;
+		SetProcessorFlag(PFlags::ZERO, XReg == 0);
+		SetProcessorFlag(PFlags::NEGATIVE, XReg & PFlags::NEGATIVE);
+		PC++;
 	}
-	void CPU::DEY_$88() {
-		this->YReg--;
-
-		// If result of decriment is zero set zero flag 
-		(this->YReg == 0) ? this->PC |= PFlags::ZERO : this->PC &= ~PFlags::ZERO;
-
-		// If bit 7 is set, set negative flag 
-		(this->YReg & (1 << 7)) ? this->PC |= PFlags::NEGATIVE : this->PC &= ~PFlags::NEGATIVE;
+	void CPU::DEY_$88()
+	{
+		YReg--;
+		SetProcessorFlag(PFlags::ZERO, YReg == 0);
+		SetProcessorFlag(PFlags::NEGATIVE, YReg & PFlags::NEGATIVE);
+		PC++;
 	}
-	void CPU::INX_$E8() {
-		this->XReg++;
-
-		// If result of decriment is zero set zero flag 
-		(this->XReg == 0) ? this->PC |= PFlags::ZERO : this->PC &= ~PFlags::ZERO;
-
-		// If bit 7 is set, set negative flag 
-		(this->XReg & (1 << 7)) ? this->PC |= PFlags::NEGATIVE : this->PC &= ~PFlags::NEGATIVE;
+	void CPU::INX_$E8()
+	{
+		XReg++;
+		SetProcessorFlag(PFlags::ZERO, XReg == 0);
+		SetProcessorFlag(PFlags::NEGATIVE, XReg & PFlags::NEGATIVE);
+		PC++;
 	}
-	void CPU::INY_$C8() {
-		this->YReg++;
-
-		// If result of decriment is zero set zero flag 
-		(this->YReg == 0) ? this->PC |= PFlags::ZERO : this->PC &= ~PFlags::ZERO;
-
-		// If bit 7 is set, set negative flag 
-		(this->YReg & (1 << 7)) ? this->PC |= PFlags::NEGATIVE : this->PC &= ~PFlags::NEGATIVE;
+	void CPU::INY_$C8()
+	{
+		YReg++;
+		SetProcessorFlag(PFlags::ZERO, YReg == 0);
+		SetProcessorFlag(PFlags::NEGATIVE, YReg & PFlags::NEGATIVE);
+		PC++;
 	}
-	void CPU::NOP_$EA() {
+	void CPU::NOP_$EA()
+	{
 		//!< Does nothing 
+		PC++;
 	}
-	void CPU::PHA_$48() {
+	void CPU::PHA_$48()
+	{
 		WriteMemory8(this->STACK + this->SP, this->Accumulator);
 		this->DecrementSP();
+		PC++;
 	}
-	void CPU::PHP_$08() {
+	void CPU::PHP_$08()
+	{
 		WriteMemory8(this->STACK + this->SP, this->ProcessorStatus);
 		this->DecrementSP();
+		PC++;
 	}
 	void CPU::PLA_$68() {
 		this->IncrementSP();
@@ -213,10 +242,12 @@ namespace ControlDeck {
 
 		(this->Accumulator == 0) ? this->ProcessorStatus |= PFlags::ZERO : this->ProcessorStatus &= ~PFlags::ZERO;
 		(this->Accumulator & (1 << 7)) ? this->ProcessorStatus |= PFlags::NEGATIVE : this->ProcessorStatus &= ~PFlags::NEGATIVE;
+		PC++;
 	}
 	void CPU::PLP_$28() {
 		this->IncrementSP();
 		this->ProcessorStatus = ReadMemory8(this->STACK + this->SP);
+		PC++;
 	}
 	void CPU::RTI_$40() {
 		this->IncrementSP();
@@ -232,42 +263,53 @@ namespace ControlDeck {
 		this->PC = _h | _l;
 
 	}
-	void CPU::RTS_$60() {
-		this->IncrementSP();
-		uint16 _l = ReadMemory8(this->STACK + this->SP);
-		this->IncrementSP();
-		uint16 _h = ReadMemory8(this->STACK + this->SP) << 8;
-		this->PC = _h | _l;
+	void CPU::JSR_$20()
+	{
+		PC++;
+		uint16 jmpAdr = ReadMemory16(PC);
+		PushStack16(PC + 1);
+		PC = jmpAdr;
 	}
-	void CPU::SEC_$38() {
+	void CPU::RTS_$60()
+	{
+		this->PC = PopStack16() + 1;
+	}
+	void CPU::SEC_$38()
+	{
 		this->ProcessorStatus |= PFlags::CARRY;
+		PC++;
 	}
 	void CPU::SED_$f8() {
 		this->ProcessorStatus |= PFlags::DECIMAL_MODE;
+		PC++;
 	}
 	void CPU::SEI_$78() {
 		this->ProcessorStatus |= PFlags::INTERRUPT_DISABLED;
+		PC++;
 	}
 	void CPU::TAX_$AA() {
 		this->XReg = this->Accumulator;
 		(this->XReg == 0) ? this->ProcessorStatus |= PFlags::ZERO : this->ProcessorStatus &= ~PFlags::ZERO;
 		(this->XReg & (1 << 7)) ? this->ProcessorStatus |= PFlags::NEGATIVE : this->ProcessorStatus &= ~PFlags::NEGATIVE;
-
+		PC++;
 	}
 	void CPU::TAY_$A8() {
 		this->YReg = this->Accumulator;
 		(this->YReg == 0) ? this->ProcessorStatus |= PFlags::ZERO : this->ProcessorStatus &= ~PFlags::ZERO;
 		(this->YReg & (1 << 7)) ? this->ProcessorStatus |= PFlags::NEGATIVE : this->ProcessorStatus &= ~PFlags::NEGATIVE;
+		PC++;
 	}
 	void CPU::TSX_$BA() {
 		this->XReg = this->SP;
 		(this->XReg == 0) ? this->ProcessorStatus |= PFlags::ZERO : this->ProcessorStatus &= ~PFlags::ZERO;
 		(this->XReg & (1 << 7)) ? this->ProcessorStatus |= PFlags::NEGATIVE : this->ProcessorStatus &= ~PFlags::NEGATIVE;
+		PC++;
 	}
 	void CPU::TXA_$8A() {
 		this->Accumulator = this->XReg;
 		(this->Accumulator == 0) ? this->ProcessorStatus |= PFlags::ZERO : this->ProcessorStatus &= ~PFlags::ZERO;
 		(this->Accumulator & (1 << 7)) ? this->ProcessorStatus |= PFlags::NEGATIVE : this->ProcessorStatus &= ~PFlags::NEGATIVE;
+		PC++;
 	}
 	void CPU::TXS_$9A() {
 		this->SP = this->XReg;
@@ -276,6 +318,7 @@ namespace ControlDeck {
 		this->Accumulator = this->YReg;
 		(this->Accumulator == 0) ? this->ProcessorStatus |= PFlags::ZERO : this->ProcessorStatus &= ~PFlags::ZERO;
 		(this->Accumulator & (1 << 7)) ? this->ProcessorStatus |= PFlags::NEGATIVE : this->ProcessorStatus &= ~PFlags::NEGATIVE;
+		PC++;
 	}
 #pragma endregion Implied Mode
 
@@ -411,94 +454,298 @@ namespace ControlDeck {
 		SetProcessorFlag(PFlags::NEGATIVE, (data & PFlags::NEGATIVE));
 	}
 
+	/*BIT - Check if bit set in memory location*/
 	void CPU::BIT(AdrMode Mode)
 	{
+		uint16 adr = ReadMemoryAddress(Mode);
+		uint8 data = ReadMemory8(adr);
 
+		SetProcessorFlag(PFlags::ZERO, (data & Accumulator) == 0);
+		SetProcessorFlag(PFlags::OVER_FLOW, data & PFlags::OVER_FLOW);
+		SetProcessorFlag(PFlags::NEGATIVE, data & PFlags::NEGATIVE);
 	}
 
 	void CPU::CMP(AdrMode Mode)
 	{
-
+		// Used to determine if value in memory is less than, greater than or equal to value in accumulator
+		uint8 memory = ReadMemory8(ReadMemoryAddress(Mode));
+		SetProcessorFlag(PFlags::NEGATIVE, (Accumulator - memory) & PFlags::NEGATIVE);
+		SetProcessorFlag(PFlags::CARRY, Accumulator >= memory);
+		SetProcessorFlag(PFlags::ZERO, Accumulator == memory);
 	}
 
 	void CPU::CPX(AdrMode Mode)
 	{
-
+		uint8 memory = ReadMemory8(ReadMemoryAddress(Mode));
+		SetProcessorFlag(PFlags::NEGATIVE, (XReg - memory) & PFlags::NEGATIVE);
+		SetProcessorFlag(PFlags::CARRY, XReg >= memory);
+		SetProcessorFlag(PFlags::ZERO, XReg == memory);
 	}
 
 	void CPU::CPY(AdrMode Mode)
 	{
-
+		uint8 memory = ReadMemory8(ReadMemoryAddress(Mode));
+		SetProcessorFlag(PFlags::NEGATIVE, (YReg - memory) & PFlags::NEGATIVE);
+		SetProcessorFlag(PFlags::CARRY, YReg >= memory);
+		SetProcessorFlag(PFlags::ZERO, YReg == memory);
 	}
 
 	void CPU::DEC(AdrMode Mode)
 	{
-
+		uint16 adr = ReadMemoryAddress(Mode);
+		uint8 data = ReadMemory8(adr);
+		data--;
+		WriteMemory8(adr, data);
+		SetProcessorFlag(PFlags::ZERO, data == 0);
+		SetProcessorFlag(PFlags::NEGATIVE, data & PFlags::NEGATIVE);
 	}
 
 	void CPU::EOR(AdrMode Mode)
 	{
-
+		uint8 memory = ReadMemory8(ReadMemoryAddress(Mode));
+		Accumulator ^= memory;
+		SetProcessorFlag(PFlags::ZERO, Accumulator == 0);
+		SetProcessorFlag(PFlags::NEGATIVE, Accumulator & PFlags::NEGATIVE);
 	}
 
 	void CPU::INC(AdrMode Mode)
 	{
-
+		uint16 adr = ReadMemoryAddress(Mode);
+		uint8 data = ReadMemory8(adr);
+		data++;
+		WriteMemory8(adr, data);
+		SetProcessorFlag(PFlags::ZERO, data == 0);
+		SetProcessorFlag(PFlags::NEGATIVE, data & PFlags::NEGATIVE);
 	}
 
 	void CPU::JMP(AdrMode Mode)
 	{
-
+		uint8 memory = ReadMemory8(ReadMemoryAddress(Mode));
+		PC = memory;
 	}
 
 	void CPU::ORA(AdrMode Mode)
 	{
-
+		uint8 memory = ReadMemory8(ReadMemoryAddress(Mode));
+		Accumulator |= memory;
+		SetProcessorFlag(PFlags::ZERO, Accumulator == 0);
+		SetProcessorFlag(PFlags::NEGATIVE, Accumulator & PFlags::NEGATIVE);
 	}
 
 	void CPU::ROL(AdrMode Mode)
 	{
+		uint8 data = 0;
 
+		if (Mode == AdrMode::ACCUMULATOR)
+		{
+			PC++;
+			SetProcessorFlag(PFlags::CARRY, (Accumulator & PFlags::NEGATIVE));
+			Accumulator = Accumulator << 1;
+			data = Accumulator;
+		}
+		else
+		{
+			uint16 adr = ReadMemoryAddress(Mode);
+			data = ReadMemory8(adr);
+			SetProcessorFlag(PFlags::CARRY, (data & PFlags::NEGATIVE));
+			data = data << 1;
+			WriteMemory8(adr, data);
+		}
+
+		SetProcessorFlag(PFlags::ZERO, data == 0);
+		SetProcessorFlag(PFlags::NEGATIVE, (data & PFlags::NEGATIVE));
 	}
 
 	void CPU::ROR(AdrMode Mode)
 	{
+		uint8 data = 0;
 
+		if (Mode == AdrMode::ACCUMULATOR)
+		{
+			PC++;
+			SetProcessorFlag(PFlags::CARRY, (Accumulator & PFlags::CARRY));
+			Accumulator = Accumulator >> 1;
+			data = Accumulator;
+		}
+		else
+		{
+			uint16 adr = ReadMemoryAddress(Mode);
+			data = ReadMemory8(adr);
+			SetProcessorFlag(PFlags::CARRY, (data & PFlags::CARRY));
+			data = data >> 1;
+			WriteMemory8(adr, data);
+		}
+
+		SetProcessorFlag(PFlags::ZERO, data == 0);
+		SetProcessorFlag(PFlags::NEGATIVE, (data & PFlags::NEGATIVE));
 	}
 
 	void CPU::SBC(AdrMode Mode)
 	{
+		uint8 memory = ReadMemory8(ReadMemoryAddress(Mode));
 
+		uint16 sum = Accumulator;
+		sum -= memory;
+		sum -= (1 - (ProcessorStatus & PFlags::CARRY));
+
+		bool overflow = false; 
+
+		if ((Accumulator ^ sum) & (memory ^ sum) & PFlags::NEGATIVE)
+		{
+			SetProcessorFlag(PFlags::OVER_FLOW, true);
+			SetProcessorFlag(PFlags::CARRY, false);
+		}
+		else
+		{
+			SetProcessorFlag(PFlags::OVER_FLOW, false);
+		}
+
+		SetProcessorFlag(PFlags::ZERO, sum == 0);
+		SetProcessorFlag(PFlags::NEGATIVE, (sum & PFlags::NEGATIVE));
+		Accumulator = sum;
 	}
 
 	void CPU::STA(AdrMode Mode)
 	{
-
+		WriteMemory8(ReadMemoryAddress(Mode), Accumulator);
 	}
 
-	void CPU::JSR_$20()
+	void CPU::STX(AdrMode Mode)
 	{
-
+		WriteMemory8(ReadMemoryAddress(Mode), XReg);
 	}
 
-	void CPU::LDA()
+	void CPU::STY(AdrMode Mode)
 	{
-
+		WriteMemory8(ReadMemoryAddress(Mode), YReg);
 	}
 
-	void CPU::LDX()
+	void CPU::BCS_$B0(AdrMode Mode)
 	{
+		uint16 memory = ReadMemoryAddress(Mode);
 
+		if (ProcessorStatus & PFlags::CARRY)
+		{
+			PC = memory;
+		}
 	}
 
-	void CPU::LDY()
+	void CPU::BEQ_$F0(AdrMode Mode)
 	{
+		uint16 memory = ReadMemoryAddress(Mode);
 
+		if (ProcessorStatus & PFlags::ZERO)
+		{
+			PC = memory;
+		}
 	}
 
-	void CPU::LSR()
+	void CPU::BMI_$30(AdrMode Mode)
 	{
+		uint16 memory = ReadMemoryAddress(Mode);
 
+		if (ProcessorStatus & PFlags::NEGATIVE)
+		{
+			PC = memory;
+		}
+	}
+
+	void CPU::BNE_D0(AdrMode Mode)
+	{
+		uint16 memory = ReadMemoryAddress(Mode);
+
+		if ((ProcessorStatus & PFlags::ZERO) == 0)
+		{
+			PC = memory;
+		}
+	}
+
+	void CPU::BPL_$10(AdrMode Mode)
+	{
+		uint16 memory = ReadMemoryAddress(Mode);
+
+		if ((ProcessorStatus & PFlags::NEGATIVE) == 0)
+		{
+			PC = memory;
+		}
+	}
+
+	void CPU::BVC_$50(AdrMode Mode)
+	{
+		uint16 memory = ReadMemoryAddress(Mode);
+
+		if ((ProcessorStatus & PFlags::OVER_FLOW) == 0)
+		{
+			PC = memory;
+		}
+	}
+
+	void CPU::BVS_$70(AdrMode Mode)
+	{
+		uint16 memory = ReadMemoryAddress(Mode);
+
+		if (ProcessorStatus & PFlags::OVER_FLOW)
+		{
+			PC = memory;
+		}
+	}
+
+	void CPU::BCC_$90(AdrMode Mode)
+	{
+		uint16 memory = ReadMemoryAddress(Mode);
+
+		if ((ProcessorStatus & PFlags::CARRY) == 0)
+		{
+			PC = memory;
+		}
+	}
+
+	void CPU::LDA(AdrMode Mode)
+	{
+		uint8 memory = ReadMemory8(ReadMemoryAddress(Mode));
+		Accumulator = memory;
+		SetProcessorFlag(PFlags::ZERO, Accumulator == 0);
+		SetProcessorFlag(PFlags::NEGATIVE, (Accumulator & PFlags::NEGATIVE));
+	}
+
+	void CPU::LDX(AdrMode Mode)
+	{
+		uint8 memory = ReadMemory8(ReadMemoryAddress(Mode));
+		XReg = memory;
+		SetProcessorFlag(PFlags::ZERO, XReg == 0);
+		SetProcessorFlag(PFlags::NEGATIVE, (XReg & PFlags::NEGATIVE));
+	}
+
+	void CPU::LDY(AdrMode Mode)
+	{
+		uint8 memory = ReadMemory8(ReadMemoryAddress(Mode));
+		YReg = memory;
+		SetProcessorFlag(PFlags::ZERO, YReg == 0);
+		SetProcessorFlag(PFlags::NEGATIVE, (YReg & PFlags::NEGATIVE));
+	}
+
+	void CPU::LSR(AdrMode Mode)
+	{
+		uint8 data = 0;
+
+		if (Mode == AdrMode::ACCUMULATOR)
+		{
+			PC++;
+			SetProcessorFlag(PFlags::CARRY, (Accumulator & PFlags::CARRY));
+			Accumulator = Accumulator >> 1;
+			data = Accumulator;
+		}
+		else
+		{
+			uint16 adr = ReadMemoryAddress(Mode);
+			data = ReadMemory8(adr);
+			SetProcessorFlag(PFlags::CARRY, (data & PFlags::CARRY));
+			data = data >> 1;
+			WriteMemory8(adr, data);
+		}
+
+		SetProcessorFlag(PFlags::ZERO, data == 0);
+		SetProcessorFlag(PFlags::NEGATIVE, (data & PFlags::NEGATIVE));
 	}
 
 #pragma endregion instructions/ operation codes used by the 6502 
