@@ -147,11 +147,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Cartridge.cpp" />
     <ClCompile Include="ControlDeck.cpp" />
     <ClCompile Include="CPU.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AddressingMode.h" />
+    <ClInclude Include="Cartridge.h" />
     <ClInclude Include="Common.h" />
     <ClInclude Include="CPU.h" />
     <ClInclude Include="ProcessorStatusFlags.h" />

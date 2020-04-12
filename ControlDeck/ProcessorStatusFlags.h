@@ -39,6 +39,10 @@ enum PFlags : uint8 {
 		Signals that a break command has been called - Causing an intterupt request
 	*/
 	BRK_CMD = 0x10,
+	/*	The B Flag 
+		No CPU Effect
+	*/
+	BFlag = 0x20,
 	/*	OVERFLOW FLAG
 		Flag is set if and invalid 2 compliments number was the result of previous operations
 	*/
