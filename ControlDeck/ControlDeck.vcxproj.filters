@@ -22,6 +22,9 @@
     <Filter Include="Source Files\PPU">
       <UniqueIdentifier>{76cb1d14-bb84-4a79-ad44-f7240aea7c44}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Cartridge">
+      <UniqueIdentifier>{5d6ef6c9-9312-4c30-92f5-c43bd4b2091c}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ControlDeck.cpp">
@@ -29,6 +32,9 @@
     </ClCompile>
     <ClCompile Include="CPU.cpp">
       <Filter>Source Files\CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="Cartridge.cpp">
+      <Filter>Source Files\Cartridge</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -46,6 +52,9 @@
     </ClInclude>
     <ClInclude Include="ProcessorStatusFlags.h">
       <Filter>Source Files\CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="Cartridge.h">
+      <Filter>Source Files\Cartridge</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

@@ -1,3 +1,5 @@
+// Copyright © Allan Moore April 2020
+
 #pragma once
 
 /*	Address modes enumeration, for opcode aaabbbcc. bbb bits determine addressing mode

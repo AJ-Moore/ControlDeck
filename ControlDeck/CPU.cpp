@@ -1,4 +1,5 @@
-//!< Author Allan Moore 20/ 03/ 2015 
+// Copyright © Allan Moore April 2020
+// Author Allan Moore 20/ 03/ 2015 - April 2020
 
 #include "CPU.h"
 
@@ -7,62 +8,205 @@ namespace ControlDeck {
 	CPU::CPU()
 	{
 		//!< The 6502 uses a 16 bit address bus $0 - $FFFF ($FFFF+1 possible addresses) 
-		this->RAM = new UByte[0xFFFF]; //!< err $FFFF invalid, wrap to 0?
+		RAM.resize(0x10000); //!< err $FFFF invalid, wrap to 0?
 
 		//!< Initialise RAM to NAUGHT
-		for (uint16 i = 0; i < 0xFFFF; i++)
-		{
-			this->RAM[i] = 0;
-		}
+		std::fill(RAM.begin(), RAM.end(), 0);
 
 		//!< NOTE TO SELF : Some initialisations may want to be moved over or mirrored/ duplicated 
 		//!<				in 'reset' in order to ensure consistency between rom switching and
 		//!<				'hardware' resets
 
 		//!< Set stack pointer to FF --> notably this could be any concievable value between 0 and FF 
-		//!< because it wraps so I couldn't see any concievable difference why the start position would 
-		//!< matter?
-		this->SP = 0xFF;
+		SP = 0xFF;
 
 		//!< Set program counter initially to Upper PRGROM-Bank 
-		this->PC = this->PRGROM_UPPER;
-	}
-
-	CPU::~CPU() {
-
+		PC = PRGROM_LOWER;
 	}
 
 	void CPU::Initialise() {
 
 	}
 
-	void CPU::Update() {
-
+	void CPU::Update()
+	{
 		//?? Some Unknown Code Regarding CPU cycles should be thought out and put here 
+		while (true) 
+		{
+			uint8 opCode = ReadMemory8(PC);
+			printf("%#04x:%#02x\t\t",PC, opCode);
+			printf("[A:%#02x][PC:%#04x][X:%#02x][Y:%#02x]\n", Accumulator, PC, XReg, YReg);
 
-		//Switch (ProgramCounter) -> Call instructions -> probably faster than using function pointers for each operation code
-		while (true)
-		{//!< While something or other execute instructions
-			uint8 opCode = this->ReadMemory8(this->PC);
-
-			//!< Switch instructions
 			switch (opCode) {
+			case 0x00: BRK_$00(); break; case 0x18: CLC_$18(); break; case 0xD8: CLD_$D8(); break;
+			case 0x58: CLI_$58(); break; case 0xB8: CLV_$B8(); break; case 0xCA: DEX_$CA(); break;
+			case 0x88: DEY_$88(); break; case 0xE8: INX_$E8(); break; case 0xC8: INY_$C8(); break;
+			case 0xEA: NOP_$EA(); break; case 0x48: PHA_$48(); break; case 0x08: PHP_$08(); break;
+			case 0x68: PLA_$68(); break; case 0x28: PLP_$28(); break; case 0x40: RTI_$40(); break;
+			case 0x60: RTS_$60(); break; case 0x38: SEC_$38(); break; case 0xf8: SED_$f8(); break;
+			case 0x78: SEI_$78(); break; case 0xAA: TAX_$AA(); break; case 0xA8: TAY_$A8(); break;
+			case 0xBA: TSX_$BA(); break; case 0x8A: TXA_$8A(); break; case 0x9A: TXS_$9A(); break;
+			case 0x98: TYA_$98(); break; case 0x20: JSR_$20(); break;
+			case 0x69: ADC(AdrMode::IMMEDIATE); break;
+			case 0x65: ADC(AdrMode::ZERO_PAGE); break;
+			case 0x75: ADC(AdrMode::ZERO_PAGEX); break;
+			case 0x6D: ADC(AdrMode::ABSOLUTE); break;
+			case 0x7D: ADC(AdrMode::ABSOLUTEX); break;
+			case 0x79: ADC(AdrMode::ABSOLUTEY); break;
+			case 0x61: ADC(AdrMode::INDEXED_INDIRECT); break;
+			case 0x71: ADC(AdrMode::INDIRECT_INDEXED); break;
+			case 0x29: AND(AdrMode::IMMEDIATE); break;
+			case 0x25: AND(AdrMode::ZERO_PAGE); break;
+			case 0x35: AND(AdrMode::ZERO_PAGEX); break;
+			case 0x2D: AND(AdrMode::ABSOLUTE); break;
+			case 0x3D: AND(AdrMode::ABSOLUTEX); break;
+			case 0x39: AND(AdrMode::ABSOLUTEY); break;
+			case 0x21: AND(AdrMode::INDEXED_INDIRECT); break;
+			case 0x31: AND(AdrMode::INDIRECT_INDEXED); break;
+			case 0x0A: ASL(AdrMode::ACCUMULATOR); break;
+			case 0x06: ASL(AdrMode::ZERO_PAGE); break;
+			case 0x16: ASL(AdrMode::ZERO_PAGEX); break;
+			case 0x0E: ASL(AdrMode::ABSOLUTE); break;
+			case 0x1E: ASL(AdrMode::ABSOLUTEX); break;
+			case 0x90: BCC_$90(AdrMode::RELATIVE); break;
+			case 0xB0: BCS_$B0(AdrMode::RELATIVE); break;
+			case 0xF0: BEQ_$F0(AdrMode::RELATIVE); break;
+			case 0x30: BMI_$30(AdrMode::RELATIVE); break;
+			case 0xD0: BNE_D0(AdrMode::RELATIVE); break;
+			case 0x10: BPL_$10(AdrMode::RELATIVE); break;
+			case 0x50: BVC_$50(AdrMode::RELATIVE); break;
+			case 0x70: BVS_$70(AdrMode::RELATIVE); break;
+			case 0x24: BIT(AdrMode::ZERO_PAGE); break;
+			case 0x2C: BIT(AdrMode::ABSOLUTE); break;
+			case 0xC9: CMP(AdrMode::IMMEDIATE); break;
+			case 0xC5: CMP(AdrMode::ZERO_PAGE); break;
+			case 0xD5: CMP(AdrMode::ZERO_PAGEX); break;
+			case 0xCD: CMP(AdrMode::ABSOLUTE); break;
+			case 0xDD: CMP(AdrMode::ABSOLUTEX); break;
+			case 0xD9: CMP(AdrMode::ABSOLUTEY); break;
+			case 0xC1: CMP(AdrMode::INDEXED_INDIRECT); break;
+			case 0xD1: CMP(AdrMode::INDIRECT_INDEXED); break;
+			case 0xE0: CPX(AdrMode::IMMEDIATE); break;
+			case 0xE4: CPX(AdrMode::ZERO_PAGE); break;
+			case 0xEC: CPX(AdrMode::ABSOLUTE); break;
+			case 0xC0: CPY(AdrMode::IMMEDIATE); break;
+			case 0xC4: CPY(AdrMode::ZERO_PAGE); break;
+			case 0xCC: CPY(AdrMode::ABSOLUTE); break;
+			case 0xC6: DEC(AdrMode::ZERO_PAGE); break;
+			case 0xD6: DEC(AdrMode::ZERO_PAGEX); break;
+			case 0xCE: DEC(AdrMode::ABSOLUTE); break;
+			case 0xDE: DEC(AdrMode::ABSOLUTEX); break;
+			case 0x49: EOR(AdrMode::IMMEDIATE); break;
+			case 0x45: EOR(AdrMode::ZERO_PAGE); break;
+			case 0x55: EOR(AdrMode::ZERO_PAGEX); break;
+			case 0x4D: EOR(AdrMode::ABSOLUTE); break;
+			case 0x5D: EOR(AdrMode::ABSOLUTEX); break;
+			case 0x59: EOR(AdrMode::ABSOLUTEY); break;
+			case 0x41: EOR(AdrMode::INDEXED_INDIRECT); break;
+			case 0x51: EOR(AdrMode::INDIRECT_INDEXED); break;
+			case 0xE6: INC(AdrMode::ZERO_PAGE); break;
+			case 0xF6: INC(AdrMode::ZERO_PAGEX); break;
+			case 0xEE: INC(AdrMode::ABSOLUTE); break;
+			case 0xFE: INC(AdrMode::ABSOLUTEX); break;
+			case 0x4C: JMP(AdrMode::ABSOLUTE); break;
+			case 0x6C: JMP(AdrMode::ABSOLUTE_INDIRECT); break;
+			case 0xA9: LDA(AdrMode::IMMEDIATE); break;
+			case 0xA5: LDA(AdrMode::ZERO_PAGE); break;
+			case 0xB5: LDA(AdrMode::ZERO_PAGEX); break;
+			case 0xAD: LDA(AdrMode::ABSOLUTE); break;
+			case 0xBD: LDA(AdrMode::ABSOLUTEX); break;
+			case 0xB9: LDA(AdrMode::ABSOLUTEY); break;
+			case 0xA1: LDA(AdrMode::INDEXED_INDIRECT); break;
+			case 0xB1: LDA(AdrMode::INDIRECT_INDEXED); break;
+			case 0xA2: LDX(AdrMode::IMMEDIATE); break;
+			case 0xA6: LDX(AdrMode::ZERO_PAGE); break;
+			case 0xB6: LDX(AdrMode::ZERO_PAGEY); break;
+			case 0xAE: LDX(AdrMode::ABSOLUTE); break;
+			case 0xBE: LDX(AdrMode::ABSOLUTEY); break;
+			case 0xA0: LDY(AdrMode::IMMEDIATE); break;
+			case 0xA4: LDY(AdrMode::ZERO_PAGE); break;
+			case 0xB4: LDY(AdrMode::ZERO_PAGEX); break;
+			case 0xAC: LDY(AdrMode::ABSOLUTE); break;
+			case 0xBC: LDY(AdrMode::ABSOLUTEX); break;
+			case 0x4A: LSR(AdrMode::ACCUMULATOR); break;
+			case 0x46: LSR(AdrMode::ZERO_PAGE); break;
+			case 0x56: LSR(AdrMode::ZERO_PAGEX); break;
+			case 0x4E: LSR(AdrMode::ABSOLUTE); break;
+			case 0x5E: LSR(AdrMode::ABSOLUTEX); break;
+			case 0x09: ORA(AdrMode::IMMEDIATE); break;
+			case 0x05: ORA(AdrMode::ZERO_PAGE); break;
+			case 0x15: ORA(AdrMode::ZERO_PAGEX); break;
+			case 0x0D: ORA(AdrMode::ABSOLUTE); break;
+			case 0x1D: ORA(AdrMode::ABSOLUTEX); break;
+			case 0x19: ORA(AdrMode::ABSOLUTEY); break;
+			case 0x01: ORA(AdrMode::INDEXED_INDIRECT); break;
+			case 0x11: ORA(AdrMode::INDIRECT_INDEXED); break;
+			case 0x2A: ROL(AdrMode::ACCUMULATOR); break;
+			case 0x26: ROL(AdrMode::ZERO_PAGE); break;
+			case 0x36: ROL(AdrMode::ZERO_PAGEX); break;
+			case 0x2E: ROL(AdrMode::ABSOLUTE); break;
+			case 0x3E: ROL(AdrMode::ABSOLUTEX); break;
+			case 0x6A: ROR(AdrMode::ACCUMULATOR); break;
+			case 0x66: ROR(AdrMode::ZERO_PAGE); break;
+			case 0x76: ROR(AdrMode::ZERO_PAGEX); break;
+			case 0x6E: ROR(AdrMode::ABSOLUTE); break;
+			case 0x7E: ROR(AdrMode::ABSOLUTEX); break;
+			case 0xE9: SBC(AdrMode::IMMEDIATE); break;
+			case 0xE5: SBC(AdrMode::ZERO_PAGE); break;
+			case 0xF5: SBC(AdrMode::ZERO_PAGEX); break;
+			case 0xED: SBC(AdrMode::ABSOLUTE); break;
+			case 0xFD: SBC(AdrMode::ABSOLUTEX); break;
+			case 0xF9: SBC(AdrMode::ABSOLUTEY); break;
+			case 0xE1: SBC(AdrMode::INDEXED_INDIRECT); break;
+			case 0xF1: SBC(AdrMode::INDIRECT_INDEXED); break;
+			case 0x85: STA(AdrMode::ZERO_PAGE); break;
+			case 0x95: STA(AdrMode::ZERO_PAGEX); break;
+			case 0x8D: STA(AdrMode::ABSOLUTE); break;
+			case 0x9D: STA(AdrMode::ABSOLUTEX); break;
+			case 0x99: STA(AdrMode::ABSOLUTEY); break;
+			case 0x81: STA(AdrMode::INDEXED_INDIRECT); break;
+			case 0x91: STA(AdrMode::INDIRECT_INDEXED); break;
+			case 0x86: STX(AdrMode::ZERO_PAGE); break;
+			case 0x96: STX(AdrMode::ZERO_PAGEY); break;
+			case 0x8E: STX(AdrMode::ABSOLUTE); break;
+			case 0x84: STY(AdrMode::ZERO_PAGE); break;
+			case 0x94: STY(AdrMode::ZERO_PAGEY); break;
+			case 0x8C: STY(AdrMode::ABSOLUTE); break;
 			default:
-				//!< Whats the default case?
 				break;
 			}
 		}
 	}
 
-	void CPU::SetProcessorFlag(PFlags Flag, bool bEnabled)
+	void CPU::LoadCartridge(Cartridge* cartridge)
+	{
+		// Does not support dynamic bank loading at present, games with more than 2 banks will not work
+
+		m_loadedCartridge = cartridge;
+
+		const std::vector<ubyte> bank0 = cartridge->GetBank(0);
+		const std::vector<ubyte> bank1 = cartridge->GetBank(1);
+
+		for (int i = 0; i < bank0.size(); ++i)
+		{
+			RAM[PRGROM_LOWER + i] = bank0[i];
+		}
+
+		for (int i = 0; i < bank1.size(); ++i)
+		{
+			RAM[PRGROM_UPPER + i] = bank1[i];
+		}
+	}
+
+	void CPU::SetProcessorFlag(uint8 Flag, bool bEnabled)
 	{
 		if (bEnabled)
 		{
-			ProcessorStatus |= Flag;
+			ProcessorStatus |= (uint8)Flag;
 		}
 		else
 		{
-			ProcessorStatus & ~(Flag);
+			ProcessorStatus &= ~((uint8)Flag);
 		}
 	}
 
@@ -311,8 +455,10 @@ namespace ControlDeck {
 		(this->Accumulator & (1 << 7)) ? this->ProcessorStatus |= PFlags::NEGATIVE : this->ProcessorStatus &= ~PFlags::NEGATIVE;
 		PC++;
 	}
-	void CPU::TXS_$9A() {
+	void CPU::TXS_$9A()
+	{
 		this->SP = this->XReg;
+		PC++;
 	}
 	void CPU::TYA_$98() {
 		this->Accumulator = this->YReg;
@@ -849,9 +995,8 @@ namespace ControlDeck {
 
 	uint16 CPU::GetMemRelative()
 	{
-		PC++;
-		uint16 M = (uint16)ReadMemory8(PC) + PC;
-		PC++;
+		PC+=2;
+		uint16 M = PC + (int8)ReadMemory8(PC-1);
 		return M;
 	}
 
