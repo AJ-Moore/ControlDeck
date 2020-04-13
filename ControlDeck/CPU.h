@@ -86,6 +86,11 @@ namespace ControlDeck
 
 		void LoadCartridge(Cartridge* cartridge);
 
+		// Read/ Write bytes to memory
+		uint8 ReadMemory8(uint16 Addr);
+		uint16 ReadMemory16(uint16 Addr);
+		void WriteMemory8(uint16 Addr, uint8 Data);
+
 	private:
 		/** Useful Constants - STACK(0x0100), PRGROM_UPPER(0xC000),PRGROM_LOWER(0x8000) **/
 		//!< The locations from which the stack, PRG ROM UPPER/ LOWER BANKS begin
@@ -94,8 +99,6 @@ namespace ControlDeck
 		const uint16 PRGROM_LOWER = 0x8000;
 
 		void SetProcessorFlag(uint8 Flag, bool bEnabled);
-		uint8 ReadMemory8(uint16 Addr);
-		uint16 ReadMemory16(uint16 Addr);
 		void PushStack8(uint8 memory);
 		void PushStack16(uint16 memory);
 		uint8 PopStack8();
@@ -110,7 +113,6 @@ namespace ControlDeck
 		*	returns the memory address
 		*/
 		uint16 ReadMemoryAddress(AdrMode Mode);
-
 		uint16 GetMemZeroPage();
 		uint16 GetMemZeroPageX();
 		uint16 GetMemZeroPageY();
@@ -124,6 +126,7 @@ namespace ControlDeck
 		uint16 GetMemIndirectIndexed();
 
 		Cartridge* m_loadedCartridge = nullptr;
+		uint32 m_cycleCounter = 0;
 
 		//!< RAM - The CPUS memory/ ram 64KB total Address range from $0 - $FFFF
 		std::vector<ubyte> RAM;
@@ -148,11 +151,6 @@ namespace ControlDeck
 		//!< Processor Status - Contains a number of bit flags in regards to the processors status (See PFLAGS)
 		//!< Bit 5 should always be set to 1 
 		uint8 ProcessorStatus = 0;
-
-		//!< Used for writing U8 to particular memory address 
-		//!< We use a writeMemory function in order to ensure that data is
-		//!< mirrored correctly... basically 
-		void WriteMemory8(uint16 Addr, uint8 Data);
 
 	private:
 

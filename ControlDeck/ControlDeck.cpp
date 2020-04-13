@@ -3,6 +3,7 @@
 #include "Common.h"
 #include "Cartridge.h"
 #include "CPU.h"
+#include "PPU.h"
 
 using namespace ControlDeck;
 
@@ -13,5 +14,14 @@ int main()
 
     SharedPtr<CPU> cpu = std::make_shared<CPU>();
     cpu->LoadCartridge(mario.get());
-    cpu->Update();
+    
+    SharedPtr<PPU> ppu = std::make_shared<PPU>(cpu.get());
+
+    bool bRunning = true;
+
+    while (bRunning)
+    {
+        cpu->Update();
+        ppu->Update();
+    }
 }

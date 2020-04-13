@@ -36,6 +36,9 @@
     <ClCompile Include="Cartridge.cpp">
       <Filter>Source Files\Cartridge</Filter>
     </ClCompile>
+    <ClCompile Include="PPU.cpp">
+      <Filter>Source Files\PPU</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Types.h">
@@ -55,6 +58,9 @@
     </ClInclude>
     <ClInclude Include="Cartridge.h">
       <Filter>Source Files\Cartridge</Filter>
+    </ClInclude>
+    <ClInclude Include="PPU.h">
+      <Filter>Source Files\PPU</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
