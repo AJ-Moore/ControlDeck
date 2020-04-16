@@ -98,6 +98,18 @@ namespace ControlDeck
 		const uint16 PRGROM_UPPER = 0xC000;
 		const uint16 PRGROM_LOWER = 0x8000;
 
+		// CPU ADDRESS LOCATIONS
+		// https://wiki.nesdev.com/w/index.php/PPU_registers#OAMADDR
+		static const uint16 PPU_CTRL_ADR = 0x2000;
+		static const uint16 PPU_MASK_ADR = 0x2001;
+		static const uint16 PPU_STATUS_ADR = 0x2002;
+		static const uint16 OAM_ADR_ADR = 0x2003;
+		static const uint16 OAM_DATA_ADR = 0x2004;
+		static const uint16 PPU_SCROLL_ADR = 0x2005;
+		static const uint16 PPU_ADR = 0x2006;
+		static const uint16 PPU_DATA_ADR = 0x2007;
+		static const uint16 OAM_DMA_ADR = 0x4014;
+
 		void SetProcessorFlag(uint8 Flag, bool bEnabled);
 		void PushStack8(uint8 memory);
 		void PushStack16(uint16 memory);

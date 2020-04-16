@@ -2,6 +2,7 @@
 // Author Allan Moore 20/ 03/ 2015 - April 2020
 
 #include "CPU.h"
+#include "PPUCtrl.h"
 
 namespace ControlDeck {
 
@@ -211,36 +212,49 @@ namespace ControlDeck {
 	}
 
 	/** CPU MEMORY READ & WRITE **/
-	void CPU::WriteMemory8(uint16 Addr, uint8 Data) {
+	void CPU::WriteMemory8(uint16 Addr, uint8 Data)
+	{
+		RAM[Addr] = Data;
 
-		//!< Not sure what to do here yet -> just so I don't forget
-		if (Addr == 0xFFFF) {
-			//throw eMAOOR;
+		// Write to PPUDATA $2700 - VRAM Address incremented by bit 2 of $2000 (cpu ctrl address) after read/ write
+		if (Addr == PPU_DATA_ADR)
+		{
+			uint8 incrememnt = (this->RAM[PPU_CTRL_ADR] & (uint8)PPUCtrl::VRamAddressIncrement);
+			if (incrememnt)
+			{
+				// Plus 1 to address 
+				RAM[PPU_DATA_ADR] = RAM[PPU_DATA_ADR]++;
+			}
+			else
+			{
+				// Plus 32 to address
+				RAM[PPU_DATA_ADR] = RAM[PPU_DATA_ADR] += 32;
+			}
 		}
 
 		//!< * Memory at $000-$07FF mirrored at $0800, $1000, $1800
 		//!< * Assuming any data written to range $0800-$2000 should
 		//!< * Mirroring will occur appriopiately 
 		if (Addr < 0x2000) {
-			if (Addr < 0x0800) {
+			if (Addr < 0x0800)
+			{
 				//!< Mirroring at $0800, $1000 and $1800 
-				this->RAM[Addr] = Data;
 				this->RAM[Addr + 0x0800] = Data;
 				this->RAM[Addr + 0x1000] = Data;
 				this->RAM[Addr + 0x1800] = Data;
 				return;
 			}
-			else if (Addr < 0x1000) {
+			else if (Addr < 0x1000)
+			{
 				this->RAM[Addr - 0x0800] = Data;
-				this->RAM[Addr] = Data;
 				this->RAM[Addr + 0x0800] = Data;
 				this->RAM[Addr + 0x1000] = Data;
 				return;
 			}
-			else if (Addr < 0x1800) {
+			else if (Addr < 0x1800)
+			{
 				this->RAM[Addr - 0x1000] = Data;
 				this->RAM[Addr - 0x0800] = Data;
-				this->RAM[Addr] = Data;
 				this->RAM[Addr + 0x0800] = Data;
 				return;
 			}
@@ -250,7 +264,8 @@ namespace ControlDeck {
 		//!< every 8 bytes in the range $2008-$3FFF
 
 		//!< Initially check if within range or I/O regs and mirrors 
-		if (Addr < 0x4000) {
+		if (Addr < 0x4000)
+		{
 			//!< Minus the starting position and get the remainder of the addr / 8 in order to establish 
 			//!< the bytes that should be mirrored (mByte -> byte to be mirrored)
 			uint8 _mByte = (Addr - 0x2000) % 8;
@@ -259,7 +274,6 @@ namespace ControlDeck {
 			for (uint16 _m = _mByte; _m < 0x4000; _m += 8) {
 				this->RAM[0x2000 + _m] = Data;
 			}
-
 		}
 	}
 

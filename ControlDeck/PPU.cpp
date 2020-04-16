@@ -111,6 +111,12 @@ namespace ControlDeck
 			}
 		}
 
+		/// OAMADDR is set to 0 257-320 of pre-render and visible scanlines
+		if (m_currentCycle >= 257 && m_currentCycle <= 320)
+		{
+			m_oamAddr = 0;
+		}
+
 		IncrementCycle();
 	}
 
@@ -122,7 +128,14 @@ namespace ControlDeck
 
 	void PPU::PreRenderScanline()
 	{
+		/// OAMADDR is set to 0 257-320 of pre-render and visible scanlines
+		if (m_currentCycle >= 257 && m_currentCycle <= 320)
+		{
+			m_oamAddr = 0;
+		}
+
 		ClearVblank();
+		IncrementCycle();
 	}
 }
 

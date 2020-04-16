@@ -17,11 +17,6 @@
 
 namespace ControlDeck
 {
-	enum PPUCtrl
-	{
-
-	};
-
 	// 7  bit  0
 	// ---- ----
 	// VSO. ....
@@ -35,6 +30,45 @@ namespace ControlDeck
 
 		// V - Vertical blank has started 0: nope 1: yes (set at dot 1 line 241 (post render), cleared after reading $2002 and dot 1 pre-render)
 		VerticalBlank = 0x80,
+	};
+
+	//  7  bit  0
+	//	---- ----
+	//	BGRs bMmG
+	//	|||| ||||
+	//	|||| |||+-Greyscale(0: normal color, 1 : produce a greyscale display)
+	//	|||| ||+-- 1: Show background in leftmost 8 pixels of screen, 0 : Hide
+	//	|||| |+-- - 1 : Show sprites in leftmost 8 pixels of screen, 0 : Hide
+	//	|||| +---- 1 : Show background
+	//	|||+------ 1 : Show sprites
+	//	|| +------ - Emphasize red
+	//	| +--------Emphasize green
+	//	+ -------- - Emphasize blue
+	enum class Mask : uint8
+	{
+		// G - 0: normal colour, 1: greyscale
+		Greyscale = 0x1,
+
+		// m - 1: Show background in leftmost 8 pixels of screen 0: hide
+		BackgroundLeftmost8Pixels = 0x2, 
+
+		// M - 1: Show sprites in leftmost 8 pixels of screen 0: hide
+		SpritesLeftmost8Pixels = 0x4,
+
+		// b - Show background if set 
+		ShowBackground = 0x8, 
+
+		// s - Show sprites
+		ShowSprites = 0x10, 
+
+		// Emphasize red 
+		EmphasizeRed = 0x20,
+
+		// Emphasize green 
+		EmphasizeGreen = 0x40,
+
+		// Emphasize blue 
+		EmphasizeBlue = 0x80,
 	};
 
 	// 262 scanlines per frame 
