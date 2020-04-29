@@ -22,9 +22,11 @@ namespace ControlDeck
 	public:
 		Cartridge() = default;
 		bool Load(std::string Path);
-		const std::vector<ubyte>& GetBank(uint16 bankNumber);
+		const std::vector<ubyte>& GetPRGBank(uint16 bankNumber);
+		const std::vector<ubyte>& GetCHRBank(uint16 bankNumber);
 
 		const uint16 m_romBankSize = 16384;
+		const uint16 m_vramBankSize = 8192;
 	private:
 		bool m_bDoneLoad = false;
 		uint8 m_prgRomBanks = 0;
@@ -33,5 +35,6 @@ namespace ControlDeck
 		std::string m_path;
 
 		std::vector<std::vector<ubyte>> m_romBanks;
+		std::vector<std::vector<ubyte>> m_vramBanks;
 	};
 }

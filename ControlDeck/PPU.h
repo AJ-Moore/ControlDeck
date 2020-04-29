@@ -1,6 +1,6 @@
 #pragma once
 #include "Common.h"
-#include "CPU.h"
+#include "PPUCtrl.h"
 
 //PPU Memory
 //Address range	Size	Description
@@ -71,15 +71,24 @@ namespace ControlDeck
 		EmphasizeBlue = 0x80,
 	};
 
+	class CPU;
+
 	// 262 scanlines per frame 
 	// 1 scaneline == 341 ppu clock cycles - 1CPU = 3 PPU
 	class PPU
 	{
+		friend class CPU;
 	public:
 		PPU() = delete;
 		PPU(CPU* cpu);
 
+		bool Init();
 		void Update();
+		void Render();
+		void WriteOAMByte(uint8 addr, uint8 data);
+		void WriteMemory8(uint16 Addr, uint8 Data);
+
+		uint GetPPUCycles() const { return m_currentCycle; }
 
 	private:
 		// Copies memory mapped registers between CPU <--> PPU 
@@ -88,40 +97,55 @@ namespace ControlDeck
 
 		uint8 ReadMemory8(uint16 Addr);
 
+
 		void SetPPUStatus(PPUStatus, bool bEnabled);
+		void SetPPUCtrl(PPUCtrl status, bool bEnabled);
+		uint8 GetBackgroundPaletteIndex();
+
+		// Loads 8 sprites for current scanline into secondary oam
+		void LoadSpritesForScanline(uint scanline);
 
 		void IncrementCycle();
 		void SetVblank();
 		void ClearVblank();
-		void FetchTile();
+		uint8 GetNametableAddress();
+		void DrawTile();
+		void DrawSprites();
 		void VisibleScanline();
 		void PostRenderScanline();
 		void PreRenderScanline();
 
-		// 16 kb address space used by ppu 
-		std::vector<ubyte> m_ram;
+		SDL_Window* m_sdlWindow = nullptr;
+		SDL_Renderer* m_sdlRenderer = nullptr;
+		SDL_Surface* m_sdlSurface = nullptr;
 
-		// 256 bytes OAM - Object arribute memory
-		std::vector<ubyte> m_oam;
+		// 16 kb address space used by ppu 
+		std::vector<ubyte> m_vram;
+
+		// 256 bytes OAM - Object arribute memory, holds 64 sprites, each sprite is 4 bytes
+		std::vector<ubyte> m_primaryOAM;
+
+		// 64 bytes OAM - holds 8 sprites for the current scanline.
+		std::vector<ubyte> m_secondaryOAM;
 
 		// Pixel buffer to be "blitted" to screen
-		std::vector<ubyte> m_pixelBuffer;
+		std::vector<uint> m_pixelBuffer;
 
 		CPU* m_cpu = nullptr;
 		uint m_currentCycle = 0;
 		uint m_currentScanline = 0;
 		uint m_currentTile = 0;
 
-		// PPU RAM ADDRESS LOCATIONS
+		// PPU RAM ADDRESS START LOCATIONS
 		const uint16 NAMETABLE_ADR = 0x2000;
-		const uint16 ATTRIB_ADR = 0x23C0;
+		const uint16 ATTRIB_OFFSET = 0x3C0;
 
 		// CPU ADDRESS LOCATIONS
 		// https://wiki.nesdev.com/w/index.php/PPU_registers#OAMADDR
 		const uint16 PPU_CTRL_ADR = 0x2000;
 		const uint16 PPU_MASK_ADR = 0x2001;
 		const uint16 PPU_STATUS_ADR = 0x2002;
-		const uint16 OAM_ADR_ADR = 0x2003;
+		const uint16 OAM_ADR = 0x2003;
 		const uint16 OAM_DATA_ADR = 0x2004;
 		const uint16 PPU_SCROLL_ADR = 0x2005;
 		const uint16 PPU_ADR = 0x2006;

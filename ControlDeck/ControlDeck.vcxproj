@@ -72,9 +72,13 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
+    <ExecutablePath>F:\Programming\ControlDeck\libraries\dll\win32;$(ExecutablePath)</ExecutablePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
+    <ExecutablePath>F:\Programming\ControlDeck\libraries\dll\win64;$(ExecutablePath)</ExecutablePath>
+    <IncludePath>F:\Programming\ControlDeck\libraries\include;$(IncludePath)</IncludePath>
+    <LibraryPath>F:\Programming\ControlDeck\libraries\lib\win64;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
@@ -95,6 +99,9 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
+    <PostBuildEvent>
+      <Command>XCOPY "$(SolutionDir)libraries\dll\win64\*.DLL" "$(TargetDir)" /D /K /Y</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -108,6 +115,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>SDL2main.lib;SDL2.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -157,7 +165,9 @@
     <ClInclude Include="Cartridge.h" />
     <ClInclude Include="Common.h" />
     <ClInclude Include="CPU.h" />
+    <ClInclude Include="Palette.h" />
     <ClInclude Include="PPU.h" />
+    <ClInclude Include="PPUCtrl.h" />
     <ClInclude Include="ProcessorStatusFlags.h" />
     <ClInclude Include="Types.h" />
   </ItemGroup>

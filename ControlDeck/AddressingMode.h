@@ -17,6 +17,8 @@
 //!<
 enum class AdrMode
 {
+	NONE, 
+
 	//!< Byte follow opcode is byte in first page of ram to be used RAM[N] where N is byte following opcode.
 	ZERO_PAGE,
 
