@@ -74,6 +74,7 @@ $0000
 #include "Common.h"
 #include "ProcessorStatusFlags.h"
 #include "Cartridge.h"
+#include "PPU.h"
 
 namespace ControlDeck
 {
@@ -81,21 +82,43 @@ namespace ControlDeck
 	{
 	public:
 		CPU();
-		void Initialise();
+		void Init();
+		void CheckForInterrupt();
+		void DebugOutput();
 		void Update();
 
 		void LoadCartridge(Cartridge* cartridge);
+		void SetPPU(PPU* ppu) { m_ppu = ppu; }
+
+		// Read/ Write bytes to memory
+		uint8 ReadMemory8(uint16 Addr);
+		uint16 ReadMemory16(uint16 Addr);
+		void WriteMemory8(uint16 Addr, uint8 Data);
+
+		uint GetCPUCycles() const { return m_cycleCounter; }
 
 	private:
+		PPU* m_ppu = nullptr;
+
 		/** Useful Constants - STACK(0x0100), PRGROM_UPPER(0xC000),PRGROM_LOWER(0x8000) **/
 		//!< The locations from which the stack, PRG ROM UPPER/ LOWER BANKS begin
 		const uint16 STACK = 0x0100;
 		const uint16 PRGROM_UPPER = 0xC000;
 		const uint16 PRGROM_LOWER = 0x8000;
 
-		void SetProcessorFlag(uint8 Flag, bool bEnabled);
-		uint8 ReadMemory8(uint16 Addr);
-		uint16 ReadMemory16(uint16 Addr);
+		// CPU ADDRESS LOCATIONS
+		// https://wiki.nesdev.com/w/index.php/PPU_registers#OAMADDR
+		static const uint16 PPU_CTRL_ADR = 0x2000;
+		static const uint16 PPU_MASK_ADR = 0x2001;
+		static const uint16 PPU_STATUS_ADR = 0x2002;
+		static const uint16 OAM_ADR = 0x2003;
+		static const uint16 OAM_DATA_ADR = 0x2004;
+		static const uint16 PPU_SCROLL_ADR = 0x2005;
+		static const uint16 PPU_ADR = 0x2006;
+		static const uint16 PPU_DATA_ADR = 0x2007;
+		static const uint16 OAM_DMA_ADR = 0x4014;
+
+		void SetProcessorFlag(PFlags Flag, bool bEnabled);
 		void PushStack8(uint8 memory);
 		void PushStack16(uint16 memory);
 		uint8 PopStack8();
@@ -110,7 +133,6 @@ namespace ControlDeck
 		*	returns the memory address
 		*/
 		uint16 ReadMemoryAddress(AdrMode Mode);
-
 		uint16 GetMemZeroPage();
 		uint16 GetMemZeroPageX();
 		uint16 GetMemZeroPageY();
@@ -124,6 +146,12 @@ namespace ControlDeck
 		uint16 GetMemIndirectIndexed();
 
 		Cartridge* m_loadedCartridge = nullptr;
+		uint32 m_cycleCounter = 0;
+
+		// Vram, oam address & toggle 
+		uint16 m_vramAddress = 0;
+		uint16 m_oamAddress = 0;
+		bool m_vramToggle = false;
 
 		//!< RAM - The CPUS memory/ ram 64KB total Address range from $0 - $FFFF
 		std::vector<ubyte> RAM;
@@ -133,10 +161,10 @@ namespace ControlDeck
 
 		//!< StackPointer - 8 Bit register - serves as offset from $0100 - No overflow - wraps $00 - $FF 
 		//!<			  - Data pushed onto the stack will be placed at $0100 + SP 
-		uint8 SP = 0xFF;
+		uint8 SP = 0xFD;
 
 		//!< Accumerlator - 8 bit register for storing the results of arithmetric & logic operations 
-		int8 Accumulator = 0;
+		uint8 Accumulator = 0;
 
 		//!< Index register X - 8 bit register - counter or offset for perticular addressing modes
 		//!< Can be set to value recieved from memory, can be used to get or set value of stack pointer
@@ -148,11 +176,6 @@ namespace ControlDeck
 		//!< Processor Status - Contains a number of bit flags in regards to the processors status (See PFLAGS)
 		//!< Bit 5 should always be set to 1 
 		uint8 ProcessorStatus = 0;
-
-		//!< Used for writing U8 to particular memory address 
-		//!< We use a writeMemory function in order to ensure that data is
-		//!< mirrored correctly... basically 
-		void WriteMemory8(uint16 Addr, uint8 Data);
 
 	private:
 
@@ -239,25 +262,9 @@ namespace ControlDeck
 
 		/*Add memory to Accumulator with carry*/
 		void ADC(AdrMode Mode);
-		void ADC_$69();	//!< Immediate 
-		void ADC_$65(); //!< Zero Page
-		void ADC_$75(); //!< Indexed Zero Page
-		void ADC_$6D();	//!< Absolute (16 bit adr)
-		void ADC_$7D(); //!< Indexed Absolute X (16 bit adr)
-		void ADC_$79(); //!< Indexed Absolute Y (16 bit adr)
-		void ADC_$61(); //!< Indexed Indirect X 
-		void ADC_$71(); //!< Indirect Indixed Y
 
 		/*AND - Bitwsie AND */
 		void AND(AdrMode Mode);
-		void AND_$29(); //!< Immediate
-		void AND_$25(); //!< Zero Page 
-		void AND_$35(); //!< Zero Page, X
-		void AND_$2D(); //!< Absolute 
-		void AND_$3D(); //!< Absolute, X 
-		void AND_$39(); //!< Absolute, Y 
-		void AND_$21(); //!< Indexed Indirect X
-		void AND_$31(); //!< Indirect Indexed Y
 
 		/*Shift Left*/
 		void ASL(AdrMode Mode);

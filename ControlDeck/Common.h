@@ -8,3 +8,6 @@
 #include <fstream>
 #include <vector>
 #include "Types.h"
+
+#include <SDL2/SDL.h>
+#undef main
