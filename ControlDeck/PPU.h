@@ -108,7 +108,7 @@ namespace ControlDeck
 		void IncrementCycle();
 		void SetVblank();
 		void ClearVblank();
-		uint8 GetNametableAddress();
+		uint16 GetNametableAddress();
 		void DrawTile();
 		void DrawSprites();
 		void VisibleScanline();
@@ -139,6 +139,8 @@ namespace ControlDeck
 		// PPU RAM ADDRESS START LOCATIONS
 		const uint16 NAMETABLE_ADR = 0x2000;
 		const uint16 ATTRIB_OFFSET = 0x3C0;
+		const uint16 PALETTE_ADR = 0x3F00;
+		const uint16 PALETTE_SPRITE_ADR = 0x3F11;
 
 		// CPU ADDRESS LOCATIONS
 		// https://wiki.nesdev.com/w/index.php/PPU_registers#OAMADDR

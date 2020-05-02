@@ -41,6 +41,10 @@ namespace ControlDeck
 		else
 		{
 			PreRenderScanline();
+		}
+
+		if (m_currentScanline == 240)
+		{
 			Render();
 		}
 
@@ -80,6 +84,42 @@ namespace ControlDeck
 	void PPU::WriteMemory8(uint16 Addr, uint8 Data)
 	{
 		m_vram[Addr] = Data;
+
+		// if vertical mirroring, : $2000 equals $2800 and $2400 equals $2C00 
+		if (true)
+		{	
+			if (Addr >= 0x2000 && Addr <= 0x23ff)
+			{
+				m_vram[Addr + 0x800] = Data;
+			}
+
+			if (Addr >= 0x2800 && Addr <= 0x2bff)
+			{
+				m_vram[Addr - 0x800] = Data;
+			}
+
+			if (Addr >= 0x2400 && Addr <= 0x27ff)
+			{
+				m_vram[Addr + 0x800] = Data;
+			}
+
+			if (Addr >= 0x2C00 && Addr <= 0x2fff)
+			{
+				m_vram[Addr - 0x800] = Data;
+			}
+
+		}
+
+		//$3000 - $3EFF	$0F00	Mirrors of $2000 - $2EFF
+		if (Addr >= 0x3000 && Addr <= 0x3EFF)
+		{
+			m_vram[Addr - 0x1000] = Data;
+		}
+
+		if (Addr >= 0x2000 && Addr < 0x2EFF)
+		{
+			m_vram[Addr + 0x1000] = Data;
+		}
 	}
 
 	void PPU::LoadRegistersFromCPU()
@@ -217,8 +257,9 @@ namespace ControlDeck
 	{
 		if (m_currentScanline == 241 && m_currentCycle == 1)
 		{
-			SetPPUCtrl(PPUCtrl::VerticalBlanking, true);
+			//SetPPUCtrl(PPUCtrl::VerticalBlanking, true);
 			SetPPUStatus(PPUStatus::VerticalBlank, true);
+			m_cpu->setNMI();
 		}
 	}
 
@@ -230,7 +271,7 @@ namespace ControlDeck
 		}
 	}
 
-	uint8 PPU::GetNametableAddress()
+	uint16 PPU::GetNametableAddress()
 	{
 		uint8 nametable = m_ppuCTRL & 0x3;
 
@@ -254,8 +295,9 @@ namespace ControlDeck
 		uint8 tileX = m_currentCycle / 32;
 		uint8 tileY = m_currentScanline / 32;
 
-		uint8 subTileX = 1-(m_currentCycle / 8) % 2;
-		uint8 subTileY = 1-(m_currentScanline / 8) % 2;
+		
+		uint8 subTileX = (m_currentCycle / 8) % 4 < 2 ? 0 : 1;
+		uint8 subTileY = (m_currentScanline / 8) % 4 < 2 ? 0 : 1;
 
 		uint8 attributeTable = ReadMemory8(GetNametableAddress() + ATTRIB_OFFSET + (tileX + (tileY * 8)));
 		uint8 paletteIndex = (attributeTable >> ((subTileX * 2) + (subTileY * 4))) & 0x3;
@@ -284,8 +326,37 @@ namespace ControlDeck
 					throw ("Out of range!");
 					return;
 				}
+				
+				uint8 colour = 0;
 
-				m_pixelBuffer[pos] = PALETTE[pixel + (paletteIndex*3)];
+				if (m_ppuMask & (uint8)Mask::EmphasizeRed)
+				{
+					printf("");
+				}
+
+				if (m_ppuMask & (uint8)Mask::EmphasizeGreen)
+				{
+					printf("");
+				}
+
+				if (m_ppuMask & (uint8)Mask::EmphasizeBlue)
+				{
+					printf("");
+				}
+
+				if (m_ppuMask & (uint8)Mask::Greyscale)
+				{
+					colour &= 0x30;
+				}
+				
+				if (pixel == 0)
+				{
+					m_pixelBuffer[pos] = PALETTE[m_vram[PALETTE_ADR]];
+				}
+				else
+				{
+					m_pixelBuffer[pos] = PALETTE[m_vram[PALETTE_ADR + (paletteIndex*4) + pixel]];
+				}
 			}
 		}
 
@@ -308,6 +379,7 @@ namespace ControlDeck
 				uint8 xPosition = m_secondaryOAM[(p * 4)+3];
 				uint8 yOffset = yPosition - scanline;
 				uint8 patternOffset = m_secondaryOAM[(p * 4) + 1];
+				uint8 paletteIndex = m_secondaryOAM[(p * 4) + 2] & 0x3;
 
 				// if 8x8 sprite byte 1 indicates pattern table tile index
 				if (m_ppuCTRL & (uint8)PPUCtrl::SpriteSize)
@@ -330,7 +402,8 @@ namespace ControlDeck
 						uint8 pixel = (pixel2 << 0x1) | pixel1;
 
 						// Write to buffer, scanline + i = y m_currentCycle + p = x
-						uint posY = scanline + yOffset + i;
+						//uint posY = scanline + yOffset + i;
+						uint posY = yPosition + i;
 						uint posX = xPosition + q;
 
 						uint pos = posX + (posY * 256);
@@ -341,7 +414,19 @@ namespace ControlDeck
 							return;
 						}
 
-						m_pixelBuffer[pos] = PALETTE[pixel +2];
+						if (pixel == 0)
+						{
+							//m_pixelBuffer[pos] = PALETTE[m_vram[PALETTE_ADR]];
+						}
+						else
+						{
+							if (m_pixelBuffer[pos]!= 0)
+							{
+								SetPPUStatus(PPUStatus::Sprite0Hit, true);
+							}
+
+							m_pixelBuffer[pos] = PALETTE[m_vram[PALETTE_SPRITE_ADR + (paletteIndex * 4) + pixel]];
+						}
 					}
 					
 				}

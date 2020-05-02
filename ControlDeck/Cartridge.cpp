@@ -82,7 +82,7 @@ namespace ControlDeck
             return std::vector<ubyte>();
         }
 
-        m_romBanks[bankNumber];
+        return m_romBanks[bankNumber];
     }
 
     const std::vector<ubyte>& Cartridge::GetCHRBank(uint16 bankNumber)
@@ -93,6 +93,6 @@ namespace ControlDeck
             return std::vector<ubyte>();
         }
 
-        m_vramBanks[bankNumber];
+        return m_vramBanks[bankNumber];
     }
 }
