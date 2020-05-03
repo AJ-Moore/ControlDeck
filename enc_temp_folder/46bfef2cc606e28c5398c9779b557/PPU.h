@@ -133,7 +133,6 @@ namespace ControlDeck
 
 		// Pixel buffer to be "blitted" to screen
 		std::vector<uint> m_pixelBuffer;
-		std::vector<uint> m_spriteBuffer;
 
 		CPU* m_cpu = nullptr;
 		uint m_currentCycle = 0;

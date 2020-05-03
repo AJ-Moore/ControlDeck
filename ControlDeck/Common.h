@@ -12,6 +12,7 @@
 #include <SDL2/SDL.h>
 #include <string>
 #include <functional>
+#include <cmath>
 
 using String = std::string;
 

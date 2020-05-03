@@ -16,99 +16,371 @@ namespace ControlDeck {
 		std::fill(RAM.begin(), RAM.end(), 0);
 	}
 
-	void CPU::Init() {
+	void CPU::Init()
+	{
+		InitInstructions();
+	}
 
+	void CPU::AddInstruction(SharedPtr<Instruction> Instruction)
+	{
+		std::vector<uint8> opcodes = Instruction->GetOpCodes();
+
+		for (uint8 opcode : opcodes)
+		{
+			m_instructions[opcode] = Instruction;
+			m_instructions[opcode]->m_cpu = this;
+		}
+	}
+
+	void CPU::InitInstructions()
+	{
+		m_instructions.resize(0xFF);
+
+		SharedPtr<Instruction> BRK = std::make_shared<Instruction>("BRK", std::bind(&CPU::BRK_$00, this, std::placeholders::_1));
+		BRK->AddOperation(0x00, 1, 7, 0, AdrMode::IMPLIED);
+		AddInstruction(BRK);
+
+		SharedPtr<Instruction> ADC = std::make_shared<Instruction>("ADC", std::bind(&CPU::ADC, this, std::placeholders::_1));
+		ADC->AddOperation(0x69, 2, 2, 0, AdrMode::IMMEDIATE);
+		ADC->AddOperation(0x65, 2, 3, 0, AdrMode::ZERO_PAGE);
+		ADC->AddOperation(0x75, 2, 4, 0, AdrMode::ZERO_PAGEX);
+		ADC->AddOperation(0x6D, 3, 4, 0, AdrMode::ABSOLUTE);
+		ADC->AddOperation(0x7D, 3, 4, 1, AdrMode::ABSOLUTEX);
+		ADC->AddOperation(0x79, 3, 4, 1, AdrMode::ABSOLUTEY);
+		ADC->AddOperation(0x61, 2, 6, 0, AdrMode::INDEXED_INDIRECT);
+		ADC->AddOperation(0x71, 2, 5, 1, AdrMode::INDIRECT_INDEXED);
+		AddInstruction(ADC);
+
+		SharedPtr<Instruction> AND = std::make_shared<Instruction>("AND", std::bind(&CPU::AND, this, std::placeholders::_1));
+		AND->AddOperation(0x29, 2, 2, 0, AdrMode::IMMEDIATE);
+		AND->AddOperation(0x25, 2, 3, 0, AdrMode::ZERO_PAGE);
+		AND->AddOperation(0x35, 2, 4, 0, AdrMode::ZERO_PAGEX);
+		AND->AddOperation(0x2D, 3, 4, 0, AdrMode::ABSOLUTE);
+		AND->AddOperation(0x3D, 3, 4, 1, AdrMode::ABSOLUTEX);
+		AND->AddOperation(0x39, 3, 4, 1, AdrMode::ABSOLUTEY);
+		AND->AddOperation(0x21, 2, 6, 0, AdrMode::INDEXED_INDIRECT);
+		AND->AddOperation(0x31, 2, 5, 1, AdrMode::INDIRECT_INDEXED);
+		AddInstruction(AND);
+
+		SharedPtr<Instruction> ASL = std::make_shared<Instruction>("ASL", std::bind(&CPU::ASL, this, std::placeholders::_1));
+		ASL->AddOperation(0x0A, 1, 2, 0, AdrMode::ACCUMULATOR);
+		ASL->AddOperation(0x06, 2, 5, 0, AdrMode::ZERO_PAGE);
+		ASL->AddOperation(0x16, 2, 6, 0, AdrMode::ZERO_PAGEX);
+		ASL->AddOperation(0x0E, 3, 6, 0, AdrMode::ABSOLUTE);
+		ASL->AddOperation(0x1E, 3, 7, 0, AdrMode::ABSOLUTEX);
+		AddInstruction(ASL);
+
+		SharedPtr<Instruction> BCC = std::make_shared<Instruction>("BCC", std::bind(&CPU::BCC_$90, this, std::placeholders::_1));
+		BCC->AddOperation(0x90, 2, 2, 0, AdrMode::RELATIVE);
+		AddInstruction(BCC);
+
+		SharedPtr<Instruction> BCS = std::make_shared<Instruction>("BCS", std::bind(&CPU::BCS_$B0, this, std::placeholders::_1));
+		BCS->AddOperation(0xB0, 2, 2, 0, AdrMode::RELATIVE);
+		AddInstruction(BCS);
+
+		SharedPtr<Instruction> BEQ = std::make_shared<Instruction>("BEQ", std::bind(&CPU::BEQ_$F0, this, std::placeholders::_1));
+		BEQ->AddOperation(0xF0, 2, 2, 0, AdrMode::RELATIVE);
+		AddInstruction(BEQ);
+
+		SharedPtr<Instruction> BIT = std::make_shared<Instruction>("BIT", std::bind(&CPU::BIT, this, std::placeholders::_1));
+		BIT->AddOperation(0x24, 2, 3, 0, AdrMode::ZERO_PAGE);
+		BIT->AddOperation(0x2C, 3, 3, 0, AdrMode::ABSOLUTE);
+		AddInstruction(BIT);
+
+		SharedPtr<Instruction> BMI = std::make_shared<Instruction>("BMI", std::bind(&CPU::BMI_$30, this, std::placeholders::_1));
+		BMI->AddOperation(0x30, 2, 2, 0, AdrMode::RELATIVE);
+		AddInstruction(BMI);
+
+		SharedPtr<Instruction> BNE = std::make_shared<Instruction>("BNE", std::bind(&CPU::BNE_D0, this, std::placeholders::_1));
+		BNE->AddOperation(0xD0, 2, 2, 0, AdrMode::RELATIVE);
+		AddInstruction(BNE);
+
+		SharedPtr<Instruction> BPL = std::make_shared<Instruction>("BPL", std::bind(&CPU::BPL_$10, this, std::placeholders::_1));
+		BPL->AddOperation(0x10, 2, 2, 0, AdrMode::RELATIVE);
+		AddInstruction(BPL);
+
+		SharedPtr<Instruction> BVC = std::make_shared<Instruction>("BVC", std::bind(&CPU::BVC_$50, this, std::placeholders::_1));
+		BVC->AddOperation(0x50, 2, 2, 0, AdrMode::RELATIVE);
+		AddInstruction(BVC);
+
+		SharedPtr<Instruction> BVS = std::make_shared<Instruction>("BVS", std::bind(&CPU::BVS_$70, this, std::placeholders::_1));	
+		BVS->AddOperation(0x70, 2, 2, 0, AdrMode::RELATIVE);
+		AddInstruction(BVS);
+
+		SharedPtr<Instruction> CLC = std::make_shared<Instruction>("CLC", std::bind(&CPU::CLC_$18, this, std::placeholders::_1));
+		CLC->AddOperation(0x18, 1, 2, 0, AdrMode::IMPLIED);
+		AddInstruction(CLC);
+
+		SharedPtr<Instruction> CLD = std::make_shared<Instruction>("CLD", std::bind(&CPU::CLD_$D8, this, std::placeholders::_1));
+		CLD->AddOperation(0xD8, 1, 2, 0, AdrMode::IMPLIED);
+		AddInstruction(CLD);
+
+		SharedPtr<Instruction> CLI = std::make_shared<Instruction>("CLI", std::bind(&CPU::CLI_$58, this, std::placeholders::_1));
+		CLI->AddOperation(0x58, 1, 2, 0, AdrMode::IMPLIED);
+		AddInstruction(CLI);
+
+		SharedPtr<Instruction> CLV = std::make_shared<Instruction>("CLV", std::bind(&CPU::CLV_$B8, this, std::placeholders::_1));
+		CLV->AddOperation(0xB8, 1, 2, 0, AdrMode::IMPLIED);
+		AddInstruction(CLV);
+
+		SharedPtr<Instruction> CMP = std::make_shared<Instruction>("CMP", std::bind(&CPU::CMP, this, std::placeholders::_1));
+		CMP->AddOperation(0xC9, 2, 2, 0, AdrMode::IMMEDIATE);
+		CMP->AddOperation(0xC5, 2, 3, 0, AdrMode::ZERO_PAGE);
+		CMP->AddOperation(0xD5, 2, 4, 0, AdrMode::ZERO_PAGEX);
+		CMP->AddOperation(0xCD, 3, 4, 0, AdrMode::ABSOLUTE);
+		CMP->AddOperation(0xDD, 3, 4, 1, AdrMode::ABSOLUTEX);
+		CMP->AddOperation(0xD9, 3, 4, 1, AdrMode::ABSOLUTEY);
+		CMP->AddOperation(0xC1, 2, 6, 0, AdrMode::INDEXED_INDIRECT);
+		CMP->AddOperation(0xD1, 2, 5, 1, AdrMode::INDIRECT_INDEXED);
+		AddInstruction(CMP);
+
+		SharedPtr<Instruction> CPX = std::make_shared<Instruction>("CPX", std::bind(&CPU::CPX, this, std::placeholders::_1));
+		CPX->AddOperation(0xE0, 2, 2, 0, AdrMode::IMMEDIATE);
+		CPX->AddOperation(0xE4, 2, 3, 0, AdrMode::ZERO_PAGE);
+		CPX->AddOperation(0xEC, 3, 4, 0, AdrMode::ABSOLUTE);
+		AddInstruction(CPX);
+
+		SharedPtr<Instruction> CPY = std::make_shared<Instruction>("CPY", std::bind(&CPU::CPY, this, std::placeholders::_1));
+		CPY->AddOperation(0xC0, 2, 2, 0, AdrMode::IMMEDIATE);
+		CPY->AddOperation(0xC4, 2, 3, 0, AdrMode::ZERO_PAGE);
+		CPY->AddOperation(0xCC, 3, 4, 0, AdrMode::ABSOLUTE);
+		AddInstruction(CPY);
+
+		SharedPtr<Instruction> DEC = std::make_shared<Instruction>("DEC", std::bind(&CPU::DEC, this, std::placeholders::_1));
+		DEC->AddOperation(0xC6, 2, 5, 0, AdrMode::ZERO_PAGE);
+		DEC->AddOperation(0xD6, 2, 6, 0, AdrMode::ZERO_PAGEX);
+		DEC->AddOperation(0xCE, 3, 6, 0, AdrMode::ABSOLUTE);
+		DEC->AddOperation(0xDE, 3, 7, 0, AdrMode::ABSOLUTEX);
+		AddInstruction(DEC);
+
+		SharedPtr<Instruction> DEX = std::make_shared<Instruction>("DEX", std::bind(&CPU::DEX_$CA, this, std::placeholders::_1));
+		DEX->AddOperation(0xCA, 1, 2, 0, AdrMode::IMPLIED);
+		AddInstruction(DEX);
+
+		SharedPtr<Instruction> DEY = std::make_shared<Instruction>("DEY", std::bind(&CPU::DEY_$88, this, std::placeholders::_1));
+		DEY->AddOperation(0x88, 1, 2, 0, AdrMode::IMPLIED);
+		AddInstruction(DEY);
+
+		SharedPtr<Instruction> EOR = std::make_shared<Instruction>("EOR", std::bind(&CPU::EOR, this, std::placeholders::_1));
+		EOR->AddOperation(0x49, 2, 2, 0, AdrMode::IMMEDIATE);
+		EOR->AddOperation(0x45, 2, 3, 0, AdrMode::ZERO_PAGE);
+		EOR->AddOperation(0x55, 2, 4, 0, AdrMode::ZERO_PAGEX);
+		EOR->AddOperation(0x4D, 3, 4, 0, AdrMode::ABSOLUTE);
+		EOR->AddOperation(0x5D, 3, 4, 1, AdrMode::ABSOLUTEX);
+		EOR->AddOperation(0x59, 3, 4, 1, AdrMode::ABSOLUTEY);
+		EOR->AddOperation(0x41, 2, 6, 0, AdrMode::INDEXED_INDIRECT);
+		EOR->AddOperation(0x51, 2, 5, 1, AdrMode::INDIRECT_INDEXED);
+		AddInstruction(EOR);
+
+		SharedPtr<Instruction> INC = std::make_shared<Instruction>("INC", std::bind(&CPU::INC, this, std::placeholders::_1));
+		INC->AddOperation(0xE6, 2, 2, 0, AdrMode::ZERO_PAGE);
+		INC->AddOperation(0xF6, 2, 3, 0, AdrMode::ZERO_PAGE);
+		INC->AddOperation(0xEE, 2, 4, 0, AdrMode::ABSOLUTE);
+		INC->AddOperation(0xFE, 3, 4, 0, AdrMode::ABSOLUTEX);
+		AddInstruction(INC);
+
+		SharedPtr<Instruction> INX = std::make_shared<Instruction>("INX", std::bind(&CPU::INX_$E8, this, std::placeholders::_1));
+		INX->AddOperation(0xE8, 1, 2, 0, AdrMode::IMPLIED);
+		AddInstruction(INX);
+
+		SharedPtr<Instruction> INY = std::make_shared<Instruction>("INY", std::bind(&CPU::INY_$C8, this, std::placeholders::_1));
+		INY->AddOperation(0xC8, 1, 2, 0, AdrMode::IMPLIED);
+		AddInstruction(INY);
+
+		SharedPtr<Instruction> JMP = std::make_shared<Instruction>("JMP", std::bind(&CPU::JMP, this, std::placeholders::_1));
+		JMP->AddOperation(0x4C, 3, 3, 0, AdrMode::ABSOLUTE);
+		JMP->AddOperation(0x6C, 3, 5, 0, AdrMode::ABSOLUTE_INDIRECT);
+		AddInstruction(JMP);
+
+		SharedPtr<Instruction> JSR = std::make_shared<Instruction>("JSR", std::bind(&CPU::JSR_$20, this, std::placeholders::_1));
+		JSR->AddOperation(0x20, 3, 6, 0, AdrMode::ABSOLUTE);
+		AddInstruction(JSR);
+
+		SharedPtr<Instruction> LDA = std::make_shared<Instruction>("LDA", std::bind(&CPU::LDA, this, std::placeholders::_1));
+		LDA->AddOperation(0xA9, 2, 2, 0, AdrMode::IMMEDIATE);
+		LDA->AddOperation(0xA5, 2, 3, 0, AdrMode::ZERO_PAGE);
+		LDA->AddOperation(0xB5, 2, 4, 0, AdrMode::ZERO_PAGEX);
+		LDA->AddOperation(0xAD, 3, 4, 0, AdrMode::ABSOLUTE);
+		LDA->AddOperation(0xBD, 3, 4, 1, AdrMode::ABSOLUTEX);
+		LDA->AddOperation(0xB9, 3, 4, 1, AdrMode::ABSOLUTEY);
+		LDA->AddOperation(0xA1, 2, 6, 0, AdrMode::INDEXED_INDIRECT);
+		LDA->AddOperation(0xB1, 2, 5, 1, AdrMode::INDIRECT_INDEXED);
+		AddInstruction(LDA);
+
+		SharedPtr<Instruction> LDX = std::make_shared<Instruction>("LDX", std::bind(&CPU::LDX, this, std::placeholders::_1));
+		LDX->AddOperation(0xA2, 2, 2, 0, AdrMode::IMMEDIATE);
+		LDX->AddOperation(0xA6, 2, 3, 0, AdrMode::ZERO_PAGE);
+		LDX->AddOperation(0xB6, 2, 4, 0, AdrMode::ZERO_PAGEY);
+		LDX->AddOperation(0xAE, 3, 4, 0, AdrMode::ABSOLUTE);
+		LDX->AddOperation(0xBE, 3, 4, 1, AdrMode::ABSOLUTEY);
+		AddInstruction(LDX);
+
+		SharedPtr<Instruction> LDY = std::make_shared<Instruction>("LDY", std::bind(&CPU::LDY, this, std::placeholders::_1));
+		LDY->AddOperation(0xA0, 2, 2, 0, AdrMode::IMMEDIATE);
+		LDY->AddOperation(0xA4, 2, 3, 0, AdrMode::ZERO_PAGE);
+		LDY->AddOperation(0xB4, 2, 4, 0, AdrMode::ZERO_PAGEX);
+		LDY->AddOperation(0xAC, 3, 4, 0, AdrMode::ABSOLUTE);
+		LDY->AddOperation(0xBC, 3, 4, 1, AdrMode::ABSOLUTEX);
+		AddInstruction(LDY);
+
+		SharedPtr<Instruction> LSR = std::make_shared<Instruction>("LSR", std::bind(&CPU::LSR, this, std::placeholders::_1));
+		LSR->AddOperation(0x4A, 1, 2, 0, AdrMode::ACCUMULATOR);
+		LSR->AddOperation(0x46, 2, 5, 0, AdrMode::ZERO_PAGE);
+		LSR->AddOperation(0x56, 2, 6, 0, AdrMode::ZERO_PAGEX);
+		LSR->AddOperation(0x4E, 3, 6, 0, AdrMode::ABSOLUTE);
+		LSR->AddOperation(0x5E, 3, 7, 1, AdrMode::ABSOLUTEX);
+		AddInstruction(LSR);
+
+		SharedPtr<Instruction> NOP = std::make_shared<Instruction>("NOP", std::bind(&CPU::NOP_$EA, this, std::placeholders::_1));
+		NOP->AddOperation(0xEA, 1, 2, 0, AdrMode::IMPLIED);
+		AddInstruction(NOP);
+
+		SharedPtr<Instruction> ORA = std::make_shared<Instruction>("ORA", std::bind(&CPU::ORA, this, std::placeholders::_1));
+		ORA->AddOperation(0x09, 2, 2, 0, AdrMode::IMMEDIATE);
+		ORA->AddOperation(0x05, 2, 3, 0, AdrMode::ZERO_PAGE);
+		ORA->AddOperation(0x15, 2, 4, 0, AdrMode::ZERO_PAGEX);
+		ORA->AddOperation(0x0D, 3, 4, 0, AdrMode::ABSOLUTE);
+		ORA->AddOperation(0x1D, 3, 4, 1, AdrMode::ABSOLUTEX);
+		ORA->AddOperation(0x19, 3, 4, 1, AdrMode::ABSOLUTEY);
+		ORA->AddOperation(0x01, 2, 6, 0, AdrMode::INDEXED_INDIRECT);
+		ORA->AddOperation(0x11, 2, 5, 1, AdrMode::INDIRECT_INDEXED);
+		AddInstruction(ORA);
+
+		SharedPtr<Instruction> PHA = std::make_shared<Instruction>("PHA", std::bind(&CPU::PHA_$48, this, std::placeholders::_1));
+		PHA->AddOperation(0x48, 1, 3, 0, AdrMode::IMPLIED);
+		AddInstruction(PHA);
+
+		SharedPtr<Instruction> PHP = std::make_shared<Instruction>("PHP", std::bind(&CPU::PHP_$08, this, std::placeholders::_1));
+		PHP->AddOperation(0x08, 1, 3, 0, AdrMode::IMPLIED);
+		AddInstruction(PHP);
+
+		SharedPtr<Instruction> PLA = std::make_shared<Instruction>("PLA", std::bind(&CPU::PLA_$68, this, std::placeholders::_1));
+		PLA->AddOperation(0x68, 1, 4, 0, AdrMode::IMPLIED);
+		AddInstruction(PLA);
+
+		SharedPtr<Instruction> PLP = std::make_shared<Instruction>("PLP", std::bind(&CPU::PLP_$28, this, std::placeholders::_1));
+		PLP->AddOperation(0x28, 1, 4, 0, AdrMode::IMPLIED);
+		AddInstruction(PLP);
+
+		SharedPtr<Instruction> ROL = std::make_shared<Instruction>("ROL", std::bind(&CPU::ROL, this, std::placeholders::_1));
+		ROL->AddOperation(0x2A, 1, 2, 0, AdrMode::ACCUMULATOR);
+		ROL->AddOperation(0x26, 2, 5, 0, AdrMode::ZERO_PAGE);
+		ROL->AddOperation(0x36, 2, 6, 0, AdrMode::ZERO_PAGEX);
+		ROL->AddOperation(0x2E, 3, 6, 0, AdrMode::ABSOLUTE);
+		ROL->AddOperation(0x3E, 3, 7, 1, AdrMode::ABSOLUTEX);
+		AddInstruction(ROL);
+
+		SharedPtr<Instruction> ROR = std::make_shared<Instruction>("ROR", std::bind(&CPU::ROR, this, std::placeholders::_1));
+		ROR->AddOperation(0x6A, 1, 2, 0, AdrMode::ACCUMULATOR);
+		ROR->AddOperation(0x66, 2, 5, 0, AdrMode::ZERO_PAGE);
+		ROR->AddOperation(0x76, 2, 6, 0, AdrMode::ZERO_PAGEX);
+		ROR->AddOperation(0x6E, 3, 6, 0, AdrMode::ABSOLUTE);
+		ROR->AddOperation(0x7E, 3, 7, 1, AdrMode::ABSOLUTEX);
+		AddInstruction(ROR);
+
+		SharedPtr<Instruction> RTI = std::make_shared<Instruction>("RTI", std::bind(&CPU::RTI_$40, this, std::placeholders::_1));
+		RTI->AddOperation(0x40, 1, 6, 0, AdrMode::IMPLIED);
+		AddInstruction(RTI);
+
+		SharedPtr<Instruction> RTS = std::make_shared<Instruction>("RTS", std::bind(&CPU::RTS_$60, this, std::placeholders::_1));
+		RTS->AddOperation(0x60, 1, 6, 0, AdrMode::IMPLIED);
+		AddInstruction(RTS);
+
+		SharedPtr<Instruction> SBC = std::make_shared<Instruction>("SBC", std::bind(&CPU::SBC, this, std::placeholders::_1));
+		SBC->AddOperation(0xE9, 2, 2, 0, AdrMode::IMMEDIATE);
+		SBC->AddOperation(0xE5, 2, 3, 0, AdrMode::ZERO_PAGE);
+		SBC->AddOperation(0xF5, 2, 4, 0, AdrMode::ZERO_PAGEX);
+		SBC->AddOperation(0xED, 3, 4, 0, AdrMode::ABSOLUTE);
+		SBC->AddOperation(0xFD, 3, 4, 1, AdrMode::ABSOLUTEX);
+		SBC->AddOperation(0xF9, 3, 4, 1, AdrMode::ABSOLUTEY);
+		SBC->AddOperation(0xE1, 2, 6, 0, AdrMode::INDEXED_INDIRECT);
+		SBC->AddOperation(0xF1, 2, 5, 1, AdrMode::INDIRECT_INDEXED);
+		AddInstruction(SBC);
+
+		SharedPtr<Instruction> SEC = std::make_shared<Instruction>("SEC", std::bind(&CPU::SEC_$38, this, std::placeholders::_1));
+		SEC->AddOperation(0x38, 1, 2, 0, AdrMode::IMPLIED);
+		AddInstruction(SEC);
+
+		SharedPtr<Instruction> SED = std::make_shared<Instruction>("SED", std::bind(&CPU::SED_$f8, this, std::placeholders::_1));
+		SEC->AddOperation(0xF8, 1, 2, 0, AdrMode::IMPLIED);
+		AddInstruction(SED);
+
+		SharedPtr<Instruction> SEI = std::make_shared<Instruction>("SEI", std::bind(&CPU::SEI_$78, this, std::placeholders::_1));
+		SEI->AddOperation(0x78, 1, 2, 0, AdrMode::IMPLIED);
+		AddInstruction(SEI);
+
+		SharedPtr<Instruction> STA = std::make_shared<Instruction>("STA", std::bind(&CPU::STA, this, std::placeholders::_1));
+		STA->AddOperation(0x85, 2, 3, 0, AdrMode::ZERO_PAGE);
+		STA->AddOperation(0x95, 2, 4, 0, AdrMode::ZERO_PAGEX);
+		STA->AddOperation(0x8D, 3, 4, 0, AdrMode::ABSOLUTE);
+		STA->AddOperation(0x9D, 3, 5, 0, AdrMode::ABSOLUTEX);
+		STA->AddOperation(0x99, 3, 5, 0, AdrMode::ABSOLUTEY);
+		STA->AddOperation(0x81, 2, 6, 0, AdrMode::INDEXED_INDIRECT);
+		STA->AddOperation(0x91, 2, 6, 0, AdrMode::INDIRECT_INDEXED);
+		AddInstruction(STA);
+
+		SharedPtr<Instruction> STX = std::make_unique<Instruction>("STX", std::bind(&CPU::STX, this, std::placeholders::_1));
+		STX->AddOperation(0x86, 2, 3, 0, AdrMode::ZERO_PAGE);
+		STX->AddOperation(0x96, 2, 4, 0, AdrMode::ZERO_PAGEY);
+		STX->AddOperation(0x8E, 3, 4, 0, AdrMode::ABSOLUTE);
+		AddInstruction(STX);
+
+		SharedPtr<Instruction> STY = std::make_unique<Instruction>("STY", std::bind(&CPU::STY, this, std::placeholders::_1));
+		STY->AddOperation(0x84, 2, 3, 0, AdrMode::ZERO_PAGE);
+		STY->AddOperation(0x94, 2, 4, 0, AdrMode::ZERO_PAGEX);
+		STY->AddOperation(0x8C, 3, 4, 0, AdrMode::ABSOLUTE);
+		AddInstruction(STY);
+
+		SharedPtr<Instruction> TAX = std::make_unique<Instruction>("TAX", std::bind(&CPU::TAX_$AA, this, std::placeholders::_1));
+		TAX->AddOperation(0xAA, 1, 2, 0, AdrMode::IMPLIED);
+		AddInstruction(TAX);
+
+		SharedPtr<Instruction> TAY = std::make_unique<Instruction>("TAY", std::bind(&CPU::TAY_$A8, this, std::placeholders::_1));
+		TAY->AddOperation(0xA8, 1, 2, 0, AdrMode::IMPLIED);
+		AddInstruction(TAY);
+
+		SharedPtr<Instruction> TSX = std::make_unique<Instruction>("TSX", std::bind(&CPU::TSX_$BA, this, std::placeholders::_1));
+		TSX->AddOperation(0xBA, 1, 2, 0, AdrMode::IMPLIED);
+		AddInstruction(TSX);
+
+		SharedPtr<Instruction> TXA = std::make_unique<Instruction>("TXA", std::bind(&CPU::TXA_$8A, this, std::placeholders::_1));
+		TXA->AddOperation(0x8A, 1, 2, 0, AdrMode::IMPLIED);
+		AddInstruction(TXA);
+
+		SharedPtr<Instruction> TXS = std::make_unique<Instruction>("TXS", std::bind(&CPU::TXS_$9A, this, std::placeholders::_1));
+		TXS->AddOperation(0x9A, 1, 2, 0, AdrMode::IMPLIED);
+		AddInstruction(TXS);
+
+		SharedPtr<Instruction> TYA = std::make_unique<Instruction>("TYA", std::bind(&CPU::TYA_$98, this, std::placeholders::_1));
+		TYA->AddOperation(0x98, 1, 2, 0, AdrMode::IMPLIED);
+		AddInstruction(TYA);
 	}
 
 	void CPU::CheckForInterrupt()
 	{
 		if (ProcessorStatus & (uint8)PFlags::INTERRUPT_DISABLED)
 		{
-			return;
+			//return;
 		}
 
 		uint8 ppuCtrl = ReadMemory8(PPU_CTRL_ADR);
 
-		if (ppuCtrl & (uint8)PPUCtrl::VerticalBlanking)
+		//if (ppuCtrl & (uint8)PPUCtrl::VerticalBlanking)
+		if (m_nmi)
 		{
-			PushStack8(ProcessorStatus);
 			PushStack16(PC);
+			PushStack8(ProcessorStatus);
 			ppuCtrl &= ~(uint8)PPUCtrl::VerticalBlanking;
 			WriteMemory8(PPU_CTRL_ADR, ppuCtrl);
 			PC = ReadMemory16(0xFFFA);
+			m_nmi = false;
 		}
 	}
 
 	void CPU::DebugOutput()
 	{
-		uint8 opCode = ReadMemory8(PC);
-		uint8 byte1 = ReadMemory8(PC + 1);
-		uint8 byte2 = ReadMemory8(PC + 2);
 
-		uint8 mode = (opCode >> 2) & 0x4;
-		uint8 cc = opCode & 0x3;
 
-		AdrMode adrMode = AdrMode::NONE;
-
-		if (cc == 01)
-		{
-			switch (mode)
-			{
-			case 0x0: adrMode = AdrMode::ZERO_PAGEX; break;
-			case 0x1: adrMode = AdrMode::ZERO_PAGE; break;
-			case 0x2: adrMode = AdrMode::IMMEDIATE; break;
-			case 0x3: adrMode = AdrMode::ABSOLUTE; break;
-			case 0x4: adrMode = AdrMode::ZERO_PAGEY; break;
-			case 0x5: adrMode = AdrMode::ZERO_PAGEX; break;
-			case 0x6: adrMode = AdrMode::ABSOLUTEY; break;
-			case 0x7: adrMode = AdrMode::ABSOLUTEX; break;
-			}
-		}
-		else if (cc == 10)
-		{
-			switch (mode)
-			{
-			case 0x0: adrMode = AdrMode::IMMEDIATE; break;
-			case 0x1: adrMode = AdrMode::ZERO_PAGE; break;
-			case 0x2: adrMode = AdrMode::ACCUMULATOR; break;
-			case 0x3: adrMode = AdrMode::ABSOLUTE; break;
-			case 0x4: adrMode = AdrMode::ZERO_PAGEX; break;
-			case 0x7: adrMode = AdrMode::ABSOLUTEY; break;
-			}
-		}
-		else if (cc == 00)
-		{
-			switch (mode)
-			{
-			case 0x0: adrMode = AdrMode::IMMEDIATE; break;
-			case 0x1: adrMode = AdrMode::ZERO_PAGE; break;
-			case 0x3: adrMode = AdrMode::ABSOLUTE; break;
-			case 0x5: adrMode = AdrMode::ZERO_PAGEX; break;
-			case 0x7: adrMode = AdrMode::ABSOLUTEX; break;
-			}
-		}
-
-		switch (adrMode)
-		{
-			case AdrMode::ABSOLUTE:
-			case AdrMode::ABSOLUTEX:
-			case AdrMode::ABSOLUTEY:
-			case AdrMode::ABSOLUTE_INDIRECT: 
-			case AdrMode::INDEXED_INDIRECT: 
-				printf("%04X %02X %02X %02X\t\t", PC, opCode, byte1, byte2);
-				break;
-			case AdrMode::ZERO_PAGE:
-			case AdrMode::ZERO_PAGEX: 
-			case AdrMode::ZERO_PAGEY:
-			case AdrMode::IMMEDIATE: 
-			case AdrMode::INDIRECT_INDEXED: 
-				printf("%04X %02X %02X   \t\t", PC, opCode, byte1);
-				break;
-		default:
-			printf("%04X %02X      \t\t", PC, opCode);
-		}
-
-		printf("A:%02X X:%02X Y:%02X P:%02X SP:%02X\n", Accumulator, XReg, YReg, ProcessorStatus, SP);
 	}
 
 	void CPU::Update()
@@ -116,153 +388,83 @@ namespace ControlDeck {
 		// Check for non-maskable interrupt
 		CheckForInterrupt();
 		uint8 opCode = ReadMemory8(PC);
+		m_instructions[opCode]->Execute(opCode);
 
-		DebugOutput();
+		UpdateInput();
 
-		switch (opCode) {
-		case 0x00: BRK_$00(); break; case 0x18: CLC_$18(); break; case 0xD8: CLD_$D8(); break;
-		case 0x58: CLI_$58(); break; case 0xB8: CLV_$B8(); break; case 0xCA: DEX_$CA(); break;
-		case 0x88: DEY_$88(); break; case 0xE8: INX_$E8(); break; case 0xC8: INY_$C8(); break;
-		case 0xEA: NOP_$EA(); break; case 0x48: PHA_$48(); break; case 0x08: PHP_$08(); break;
-		case 0x68: PLA_$68(); break; case 0x28: PLP_$28(); break; case 0x40: RTI_$40(); break;
-		case 0x60: RTS_$60(); break; case 0x38: SEC_$38(); break; case 0xf8: SED_$f8(); break;
-		case 0x78: SEI_$78(); break; case 0xAA: TAX_$AA(); break; case 0xA8: TAY_$A8(); break;
-		case 0xBA: TSX_$BA(); break; case 0x8A: TXA_$8A(); break; case 0x9A: TXS_$9A(); break;
-		case 0x98: TYA_$98(); break; case 0x20: JSR_$20(); break;
-		case 0x69: ADC(AdrMode::IMMEDIATE); break;
-		case 0x65: ADC(AdrMode::ZERO_PAGE); break;
-		case 0x75: ADC(AdrMode::ZERO_PAGEX); break;
-		case 0x6D: ADC(AdrMode::ABSOLUTE); break;
-		case 0x7D: ADC(AdrMode::ABSOLUTEX); break;
-		case 0x79: ADC(AdrMode::ABSOLUTEY); break;
-		case 0x61: ADC(AdrMode::INDEXED_INDIRECT); break;
-		case 0x71: ADC(AdrMode::INDIRECT_INDEXED); break;
-		case 0x29: AND(AdrMode::IMMEDIATE); break;
-		case 0x25: AND(AdrMode::ZERO_PAGE); break;
-		case 0x35: AND(AdrMode::ZERO_PAGEX); break;
-		case 0x2D: AND(AdrMode::ABSOLUTE); break;
-		case 0x3D: AND(AdrMode::ABSOLUTEX); break;
-		case 0x39: AND(AdrMode::ABSOLUTEY); break;
-		case 0x21: AND(AdrMode::INDEXED_INDIRECT); break;
-		case 0x31: AND(AdrMode::INDIRECT_INDEXED); break;
-		case 0x0A: ASL(AdrMode::ACCUMULATOR); break;
-		case 0x06: ASL(AdrMode::ZERO_PAGE); break;
-		case 0x16: ASL(AdrMode::ZERO_PAGEX); break;
-		case 0x0E: ASL(AdrMode::ABSOLUTE); break;
-		case 0x1E: ASL(AdrMode::ABSOLUTEX); break;
-		case 0x90: BCC_$90(AdrMode::RELATIVE); break;
-		case 0xB0: BCS_$B0(AdrMode::RELATIVE); break;
-		case 0xF0: BEQ_$F0(AdrMode::RELATIVE); break;
-		case 0x30: BMI_$30(AdrMode::RELATIVE); break;
-		case 0xD0: BNE_D0(AdrMode::RELATIVE); break;
-		case 0x10: BPL_$10(AdrMode::RELATIVE); break;
-		case 0x50: BVC_$50(AdrMode::RELATIVE); break;
-		case 0x70: BVS_$70(AdrMode::RELATIVE); break;
-		case 0x24: BIT(AdrMode::ZERO_PAGE); break;
-		case 0x2C: BIT(AdrMode::ABSOLUTE); break;
-		case 0xC9: CMP(AdrMode::IMMEDIATE); break;
-		case 0xC5: CMP(AdrMode::ZERO_PAGE); break;
-		case 0xD5: CMP(AdrMode::ZERO_PAGEX); break;
-		case 0xCD: CMP(AdrMode::ABSOLUTE); break;
-		case 0xDD: CMP(AdrMode::ABSOLUTEX); break;
-		case 0xD9: CMP(AdrMode::ABSOLUTEY); break;
-		case 0xC1: CMP(AdrMode::INDEXED_INDIRECT); break;
-		case 0xD1: CMP(AdrMode::INDIRECT_INDEXED); break;
-		case 0xE0: CPX(AdrMode::IMMEDIATE); break;
-		case 0xE4: CPX(AdrMode::ZERO_PAGE); break;
-		case 0xEC: CPX(AdrMode::ABSOLUTE); break;
-		case 0xC0: CPY(AdrMode::IMMEDIATE); break;
-		case 0xC4: CPY(AdrMode::ZERO_PAGE); break;
-		case 0xCC: CPY(AdrMode::ABSOLUTE); break;
-		case 0xC6: DEC(AdrMode::ZERO_PAGE); break;
-		case 0xD6: DEC(AdrMode::ZERO_PAGEX); break;
-		case 0xCE: DEC(AdrMode::ABSOLUTE); break;
-		case 0xDE: DEC(AdrMode::ABSOLUTEX); break;
-		case 0x49: EOR(AdrMode::IMMEDIATE); break;
-		case 0x45: EOR(AdrMode::ZERO_PAGE); break;
-		case 0x55: EOR(AdrMode::ZERO_PAGEX); break;
-		case 0x4D: EOR(AdrMode::ABSOLUTE); break;
-		case 0x5D: EOR(AdrMode::ABSOLUTEX); break;
-		case 0x59: EOR(AdrMode::ABSOLUTEY); break;
-		case 0x41: EOR(AdrMode::INDEXED_INDIRECT); break;
-		case 0x51: EOR(AdrMode::INDIRECT_INDEXED); break;
-		case 0xE6: INC(AdrMode::ZERO_PAGE); break;
-		case 0xF6: INC(AdrMode::ZERO_PAGEX); break;
-		case 0xEE: INC(AdrMode::ABSOLUTE); break;
-		case 0xFE: INC(AdrMode::ABSOLUTEX); break;
-		case 0x4C: JMP(AdrMode::ABSOLUTE); break;
-		case 0x6C: JMP(AdrMode::ABSOLUTE_INDIRECT); break;
-		case 0xA9: LDA(AdrMode::IMMEDIATE); break;
-		case 0xA5: LDA(AdrMode::ZERO_PAGE); break;
-		case 0xB5: LDA(AdrMode::ZERO_PAGEX); break;
-		case 0xAD: LDA(AdrMode::ABSOLUTE); break;
-		case 0xBD: LDA(AdrMode::ABSOLUTEX); break;
-		case 0xB9: LDA(AdrMode::ABSOLUTEY); break;
-		case 0xA1: LDA(AdrMode::INDEXED_INDIRECT); break;
-		case 0xB1: LDA(AdrMode::INDIRECT_INDEXED); break;
-		case 0xA2: LDX(AdrMode::IMMEDIATE); break;
-		case 0xA6: LDX(AdrMode::ZERO_PAGE); break;
-		case 0xB6: LDX(AdrMode::ZERO_PAGEY); break;
-		case 0xAE: LDX(AdrMode::ABSOLUTE); break;
-		case 0xBE: LDX(AdrMode::ABSOLUTEY); break;
-		case 0xA0: LDY(AdrMode::IMMEDIATE); break;
-		case 0xA4: LDY(AdrMode::ZERO_PAGE); break;
-		case 0xB4: LDY(AdrMode::ZERO_PAGEX); break;
-		case 0xAC: LDY(AdrMode::ABSOLUTE); break;
-		case 0xBC: LDY(AdrMode::ABSOLUTEX); break;
-		case 0x4A: LSR(AdrMode::ACCUMULATOR); break;
-		case 0x46: LSR(AdrMode::ZERO_PAGE); break;
-		case 0x56: LSR(AdrMode::ZERO_PAGEX); break;
-		case 0x4E: LSR(AdrMode::ABSOLUTE); break;
-		case 0x5E: LSR(AdrMode::ABSOLUTEX); break;
-		case 0x09: ORA(AdrMode::IMMEDIATE); break;
-		case 0x05: ORA(AdrMode::ZERO_PAGE); break;
-		case 0x15: ORA(AdrMode::ZERO_PAGEX); break;
-		case 0x0D: ORA(AdrMode::ABSOLUTE); break;
-		case 0x1D: ORA(AdrMode::ABSOLUTEX); break;
-		case 0x19: ORA(AdrMode::ABSOLUTEY); break;
-		case 0x01: ORA(AdrMode::INDEXED_INDIRECT); break;
-		case 0x11: ORA(AdrMode::INDIRECT_INDEXED); break;
-		case 0x2A: ROL(AdrMode::ACCUMULATOR); break;
-		case 0x26: ROL(AdrMode::ZERO_PAGE); break;
-		case 0x36: ROL(AdrMode::ZERO_PAGEX); break;
-		case 0x2E: ROL(AdrMode::ABSOLUTE); break;
-		case 0x3E: ROL(AdrMode::ABSOLUTEX); break;
-		case 0x6A: ROR(AdrMode::ACCUMULATOR); break;
-		case 0x66: ROR(AdrMode::ZERO_PAGE); break;
-		case 0x76: ROR(AdrMode::ZERO_PAGEX); break;
-		case 0x6E: ROR(AdrMode::ABSOLUTE); break;
-		case 0x7E: ROR(AdrMode::ABSOLUTEX); break;
-		case 0xE9: SBC(AdrMode::IMMEDIATE); break;
-		case 0xE5: SBC(AdrMode::ZERO_PAGE); break;
-		case 0xF5: SBC(AdrMode::ZERO_PAGEX); break;
-		case 0xED: SBC(AdrMode::ABSOLUTE); break;
-		case 0xFD: SBC(AdrMode::ABSOLUTEX); break;
-		case 0xF9: SBC(AdrMode::ABSOLUTEY); break;
-		case 0xE1: SBC(AdrMode::INDEXED_INDIRECT); break;
-		case 0xF1: SBC(AdrMode::INDIRECT_INDEXED); break;
-		case 0x85: STA(AdrMode::ZERO_PAGE); break;
-		case 0x95: STA(AdrMode::ZERO_PAGEX); break;
-		case 0x8D: STA(AdrMode::ABSOLUTE); break;
-		case 0x9D: STA(AdrMode::ABSOLUTEX); break;
-		case 0x99: STA(AdrMode::ABSOLUTEY); break;
-		case 0x81: STA(AdrMode::INDEXED_INDIRECT); break;
-		case 0x91: STA(AdrMode::INDIRECT_INDEXED); break;
-		case 0x86: STX(AdrMode::ZERO_PAGE); break;
-		case 0x96: STX(AdrMode::ZERO_PAGEY); break;
-		case 0x8E: STX(AdrMode::ABSOLUTE); break;
-		case 0x84: STY(AdrMode::ZERO_PAGE); break;
-		case 0x94: STY(AdrMode::ZERO_PAGEY); break;
-		case 0x8C: STY(AdrMode::ABSOLUTE); break;
-		default:
-			//throw("Invalid Instruction!");
-			PC++;
-			break;
+	}
+
+	void CPU::UpdateInput()
+	{
+		SDL_PumpEvents();
+		SDL_Event _event;
+		SDL_Scancode key;
+		const Uint8* keyState = SDL_GetKeyboardState(NULL);
+		while (SDL_PollEvent(&_event))
+		{
+			if (keyState[SDL_SCANCODE_ESCAPE] || _event.type == SDL_QUIT) {
+			}
+
+			switch (_event.type) {
+			case SDL_KEYDOWN:
+				key = _event.key.keysym.scancode;
+
+				if (key == SDL_SCANCODE_X)
+				{
+					m_controller1Input |= (uint8)Controller::A;
+				}
+				if (key == SDL_SCANCODE_C)
+				{
+					m_controller1Input |= (uint8)Controller::B;
+				}
+				if (key == SDL_SCANCODE_LEFT)
+				{
+					m_controller1Input |= (uint8)Controller::LEFT;
+				}
+				if (key == SDL_SCANCODE_RIGHT)
+				{
+					m_controller1Input |= (uint8)Controller::RIGHT;
+				}
+				if (key == SDL_SCANCODE_UP)
+				{
+					m_controller1Input |= (uint8)Controller::UP;
+				}
+				if (key == SDL_SCANCODE_DOWN)
+				{
+					m_controller1Input |= (uint8)Controller::DOWN;
+				}
+
+				break;
+			case SDL_KEYUP:
+				key = _event.key.keysym.scancode;
+
+				if (key == SDL_SCANCODE_X)
+				{
+					m_controller1Input &= ~(uint8)Controller::A;
+				}
+				if (key == SDL_SCANCODE_C)
+				{
+					m_controller1Input &= ~(uint8)Controller::B;
+				}
+				if (key == SDL_SCANCODE_LEFT)
+				{
+					m_controller1Input &= ~(uint8)Controller::LEFT;
+				}
+				if (key == SDL_SCANCODE_RIGHT)
+				{
+					m_controller1Input &= ~(uint8)Controller::RIGHT;
+				}
+				if (key == SDL_SCANCODE_UP)
+				{
+					m_controller1Input &= ~(uint8)Controller::UP;
+				}
+				if (key == SDL_SCANCODE_DOWN)
+				{
+					m_controller1Input &= ~(uint8)Controller::DOWN;
+				}
+				break;
+			}
 		}
-		
-
-		// bit of a hack for time being relinquish control, add 6 or so cycles (yet to add cycle code)
-		m_cycleCounter += 3;
 	}
 
 	void CPU::LoadCartridge(Cartridge* cartridge)
@@ -281,22 +483,27 @@ namespace ControlDeck {
 		}
 
 		// load pattern tables into PPU
-		const std::vector<ubyte> vrambank0 = cartridge->GetCHRBank(0);
-		//const std::vector<ubyte> vrambank1 = cartridge->GetCHRBank(1);
-
-		for (int i = 0; i < vrambank0.size(); ++i)
+		if (cartridge->GetNumVRamBanks() > 0)
 		{
-			m_ppu->m_vram[i] = vrambank0[i];
+			const std::vector<ubyte> vrambank0 = cartridge->GetCHRBank(0);
+
+			for (int i = 0; i < vrambank0.size(); ++i)
+			{
+				m_ppu->WriteMemory8(i, vrambank0[i]);
+			}
 		}
 
-		//for (int i = 0; i < vrambank1.size(); ++i)
-		//{
-		//	m_ppu->m_vram[0x1FFF + i] = vrambank1[i];
-		//}
+		if (cartridge->GetNumVRamBanks() > 1)
+		{
+			const std::vector<ubyte> vrambank1 = cartridge->GetCHRBank(1);
+			for (int i = 0; i < vrambank1.size(); ++i)
+			{
+				m_ppu->WriteMemory8(0x1FFF + i, vrambank1[i]);
+			}
+		}
 
 		// Set the program counter to the reset vector 
 		PC = ReadMemory16(0xFFFC);
-		//PC = 0xC000;
 	}
 
 	void CPU::SetProcessorFlag(PFlags Flag, bool bEnabled)
@@ -323,6 +530,14 @@ namespace ControlDeck {
 		//}
 
 		RAM[Addr] = Data;
+
+		if (Addr == CONTROLLER1_ADR)
+		{
+			if (Data == 0x1)
+			{
+				m_controllerLatched = true;
+			}
+		}
 
 		// Write lsb of data previous written into PPU registers into ppu status $2002 register
 		if ((Addr >= PPU_CTRL_ADR && Addr <= PPU_DATA_ADR) || Addr == OAM_DMA_ADR)
@@ -423,7 +638,7 @@ namespace ControlDeck {
 		//!< every 8 bytes in the range $2008-$3FFF
 
 		//!< Initially check if within range or I/O regs and mirrors 
-		if (Addr < 0x4000 & Addr >= 0x2000)
+		if ((Addr < 0x4000) && (Addr >= 0x2000))
 		{
 			//!< Minus the starting position and get the remainder of the addr / 8 in order to establish 
 			//!< the bytes that should be mirrored (mByte -> byte to be mirrored)
@@ -438,6 +653,35 @@ namespace ControlDeck {
 
 	uint8 CPU::ReadMemory8(uint16 Addr)
 	{
+		if (Addr == CONTROLLER1_ADR || Addr == CONTROLLER2_ADR)
+		{
+			if (m_controllerLatched)
+			{
+				uint8 input = (Addr == CONTROLLER1_ADR) ? m_controller1Input : m_controller2Input;
+
+				// read input 1 bit at time and increment 
+				input = (input >> m_controllerReadBit) & 0x1;
+				m_controllerReadBit++;
+
+				if (m_controllerReadBit >= 8)
+				{
+					m_controllerReadBit = 0;
+
+					if (Addr == CONTROLLER2_ADR)
+					{
+						m_controllerLatched = false;
+					}
+				}
+				//WriteMemory8(Addr, input);
+				return input;
+			}
+		}
+
+		//if (Addr == PPU_STATUS_ADR)
+		//{
+		//	RAM[PPU_STATUS_ADR] &= ~(uint8)PPUStatus::VerticalBlank;
+		//}
+
 		return this->RAM[Addr];
 	}
 
@@ -481,148 +725,148 @@ namespace ControlDeck {
 
 #pragma region Implied Addressing Mode Instructions
 /***Implied Addressing Mode Instructions (25)***/
-	void CPU::BRK_$00()
+	void CPU::BRK_$00(AdrMode Mode)
 	{
 		PushStack16(PC);
 		PushStack8(ProcessorStatus);
 		SetProcessorFlag(PFlags::BRK_CMD, true);
 		PC = ReadMemory16(0xFFFE);
 	}
-	void CPU::CLC_$18()
+	void CPU::CLC_$18(AdrMode Mode)
 	{
 		SetProcessorFlag(PFlags::CARRY, false);
 		PC++;
 	}
-	void CPU::CLD_$D8()
+	void CPU::CLD_$D8(AdrMode Mode)
 	{
 		SetProcessorFlag(PFlags::DECIMAL_MODE, false);
 		PC++;
 	}
-	void CPU::CLI_$58()
+	void CPU::CLI_$58(AdrMode Mode)
 	{
 		SetProcessorFlag(PFlags::INTERRUPT_DISABLED, false);
 		PC++;
 	}
-	void CPU::CLV_$B8()
+	void CPU::CLV_$B8(AdrMode Mode)
 	{
 		SetProcessorFlag(PFlags::OVER_FLOW, false);
 		PC++;
 	}
-	void CPU::DEX_$CA()
+	void CPU::DEX_$CA(AdrMode Mode)
 	{
 		XReg--;
 		SetProcessorFlag(PFlags::ZERO, XReg == 0);
 		SetProcessorFlag(PFlags::NEGATIVE, XReg & PFlags::NEGATIVE);
 		PC++;
 	}
-	void CPU::DEY_$88()
+	void CPU::DEY_$88(AdrMode Mode)
 	{
 		YReg--;
 		SetProcessorFlag(PFlags::ZERO, YReg == 0);
 		SetProcessorFlag(PFlags::NEGATIVE, YReg & PFlags::NEGATIVE);
 		PC++;
 	}
-	void CPU::INX_$E8()
+	void CPU::INX_$E8(AdrMode Mode)
 	{
 		XReg++;
 		SetProcessorFlag(PFlags::ZERO, XReg == 0);
 		SetProcessorFlag(PFlags::NEGATIVE, XReg & PFlags::NEGATIVE);
 		PC++;
 	}
-	void CPU::INY_$C8()
+	void CPU::INY_$C8(AdrMode Mode)
 	{
 		YReg++;
 		SetProcessorFlag(PFlags::ZERO, YReg == 0);
 		SetProcessorFlag(PFlags::NEGATIVE, YReg & PFlags::NEGATIVE);
 		PC++;
 	}
-	void CPU::NOP_$EA()
+	void CPU::NOP_$EA(AdrMode Mode)
 	{
 		//!< Does nothing 
 		PC++;
 	}
-	void CPU::PHA_$48()
+	void CPU::PHA_$48(AdrMode Mode)
 	{
 		PushStack8(Accumulator);
 		PC++;
 	}
-	void CPU::PHP_$08()
+	void CPU::PHP_$08(AdrMode Mode)
 	{
 		PushStack8(ProcessorStatus);
 		PC++;
 	}
-	void CPU::PLA_$68()
+	void CPU::PLA_$68(AdrMode Mode)
 	{
 		Accumulator = PopStack8();
 		SetProcessorFlag(PFlags::ZERO, Accumulator == 0);
 		SetProcessorFlag(PFlags::NEGATIVE, Accumulator & PFlags::NEGATIVE);
 		PC++;
 	}
-	void CPU::PLP_$28()
+	void CPU::PLP_$28(AdrMode Mode)
 	{
 		ProcessorStatus = PopStack8();
 		PC++;
 	}
-	void CPU::RTI_$40()
+	void CPU::RTI_$40(AdrMode Mode)
 	{
 		ProcessorStatus = PopStack8();
 		PC = PopStack16();
 	}
-	void CPU::JSR_$20()
+	void CPU::JSR_$20(AdrMode Mode)
 	{
 		PC++;
 		uint16 jmpAdr = ReadMemory16(PC);
 		PushStack16(PC + 1);
 		PC = jmpAdr;
 	}
-	void CPU::RTS_$60()
+	void CPU::RTS_$60(AdrMode Mode)
 	{
 		this->PC = PopStack16() + 1;
 	}
-	void CPU::SEC_$38()
+	void CPU::SEC_$38(AdrMode Mode)
 	{
 		this->ProcessorStatus |= PFlags::CARRY;
 		PC++;
 	}
-	void CPU::SED_$f8() {
+	void CPU::SED_$f8(AdrMode Mode) {
 		this->ProcessorStatus |= PFlags::DECIMAL_MODE;
 		PC++;
 	}
-	void CPU::SEI_$78() {
+	void CPU::SEI_$78(AdrMode Mode) {
 		this->ProcessorStatus |= PFlags::INTERRUPT_DISABLED;
 		PC++;
 	}
-	void CPU::TAX_$AA()
+	void CPU::TAX_$AA(AdrMode Mode)
 	{
 		XReg = Accumulator;
 		SetProcessorFlag(PFlags::ZERO, XReg == 0);
 		SetProcessorFlag(PFlags::NEGATIVE, XReg & PFlags::NEGATIVE);
 		PC++;
 	}
-	void CPU::TAY_$A8() {
+	void CPU::TAY_$A8(AdrMode Mode) {
 		YReg = Accumulator;
 		SetProcessorFlag(PFlags::ZERO, YReg == 0);
 		SetProcessorFlag(PFlags::NEGATIVE, YReg & PFlags::NEGATIVE);
 		PC++;
 	}
-	void CPU::TSX_$BA() {
+	void CPU::TSX_$BA(AdrMode Mode) {
 		this->XReg = this->SP;
 		SetProcessorFlag(PFlags::ZERO, XReg == 0);
 		SetProcessorFlag(PFlags::NEGATIVE, XReg & PFlags::NEGATIVE);
 		PC++;
 	}
-	void CPU::TXA_$8A() {
+	void CPU::TXA_$8A(AdrMode Mode) {
 		this->Accumulator = this->XReg;
 		SetProcessorFlag(PFlags::ZERO, Accumulator == 0);
 		SetProcessorFlag(PFlags::NEGATIVE, Accumulator & PFlags::NEGATIVE);
 		PC++;
 	}
-	void CPU::TXS_$9A()
+	void CPU::TXS_$9A(AdrMode Mode)
 	{
 		this->SP = this->XReg;
 		PC++;
 	}
-	void CPU::TYA_$98() {
+	void CPU::TYA_$98(AdrMode Mode) {
 		this->Accumulator = this->YReg;
 		SetProcessorFlag(PFlags::ZERO, Accumulator == 0);
 		SetProcessorFlag(PFlags::NEGATIVE, Accumulator & PFlags::NEGATIVE);
@@ -764,6 +1008,7 @@ namespace ControlDeck {
 
 	void CPU::JMP(AdrMode Mode)
 	{
+ 
 		PC = ReadMemoryAddress(Mode);
 	}
 

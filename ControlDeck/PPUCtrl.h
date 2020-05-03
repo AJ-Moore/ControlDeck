@@ -38,6 +38,6 @@ enum class PPUCtrl : uint8
 	// (0: read backdrop from EXT pins; 1: output color on EXT pins)
 	PPUMasterSlaveSelect = 0x40,
 
-	// Generate NMI at start of Vertical Blanking interval
+	// Generate NMI at start of Vertical Blanking interval PPU 0: off 1:on
 	VerticalBlanking = 0x80
 };

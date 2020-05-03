@@ -85,6 +85,9 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
+    <ExecutablePath>F:\Programming\ControlDeck\libraries\dll\win64;$(ExecutablePath)</ExecutablePath>
+    <IncludePath>F:\Programming\ControlDeck\libraries\include;$(IncludePath)</IncludePath>
+    <LibraryPath>F:\Programming\ControlDeck\libraries\lib\win64;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -152,12 +155,14 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>SDL2main.lib;SDL2.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Cartridge.cpp" />
     <ClCompile Include="ControlDeck.cpp" />
     <ClCompile Include="CPU.cpp" />
+    <ClCompile Include="Instruction.cpp" />
     <ClCompile Include="PPU.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -165,6 +170,7 @@
     <ClInclude Include="Cartridge.h" />
     <ClInclude Include="Common.h" />
     <ClInclude Include="CPU.h" />
+    <ClInclude Include="Instruction.h" />
     <ClInclude Include="Palette.h" />
     <ClInclude Include="PPU.h" />
     <ClInclude Include="PPUCtrl.h" />

@@ -12,7 +12,6 @@ namespace ControlDeck
 		m_primaryOAM.resize(0x100);
 		m_secondaryOAM.resize(0x20);
 		m_pixelBuffer.resize(256 * 240);
-		m_spriteBuffer.resize(256 * 240);
 	}
 
 	bool PPU::Init()
