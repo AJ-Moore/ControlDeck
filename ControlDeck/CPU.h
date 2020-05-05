@@ -79,16 +79,16 @@ $0000
 
 namespace ControlDeck
 {
-	enum class Controller
+	enum class Controller : uint8
 	{
 		A = 0x1, 
 		B = 0x2, 
 		SELECT = 0x4, 
 		START = 0x8,
 		UP = 0x10, 
-		DOWN = 0X20, 
-		LEFT = 0X40, 
-		RIGHT = 0X80
+		DOWN = 0x20, 
+		LEFT = 0x40, 
+		RIGHT = 0x80
 	};
 
 	class CPU
@@ -111,6 +111,7 @@ namespace ControlDeck
 		void WriteMemory8(uint16 Addr, uint8 Data);
 
 		uint GetCPUCycles() const { return m_cycleCounter; }
+		void ResetCPUCycles() { m_cycleCounter = 0; }
 		void setNMI() { m_nmi = true; }
 
 	private:

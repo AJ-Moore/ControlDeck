@@ -18,24 +18,24 @@ namespace ControlDeck
 			m_operation(info->Mode);
 			m_cpu->m_cycleCounter += info->Cycles;
 
-			uint8 opCode = m_cpu->ReadMemory8(m_cpu->PC);
-			uint8 byte1 = m_cpu->ReadMemory8(m_cpu->PC + 1);
-			uint8 byte2 = m_cpu->ReadMemory8(m_cpu->PC + 2);
+			//uint8 opCode = m_cpu->ReadMemory8(m_cpu->PC);
+			//uint8 byte1 = m_cpu->ReadMemory8(m_cpu->PC + 1);
+			//uint8 byte2 = m_cpu->ReadMemory8(m_cpu->PC + 2);
 
-			if (info->Bytes == 1)
-			{
-				printf("%04X %02X       %s\t\t", m_cpu->PC, opCode, m_name.c_str());
-			}
-			else if (info->Bytes == 2)
-			{
-				printf("%04X %02X %02X    %s\t\t", m_cpu->PC, opCode, byte1, m_name.c_str());
-			}
-			else
-			{
-				printf("%04X %02X %02X %02X %s\t\t", m_cpu->PC, opCode, byte1, byte2, m_name.c_str());
-			}
+			//if (info->Bytes == 1)
+			//{
+			//	printf("%04X %02X       %s\t\t", m_cpu->PC, opCode, m_name.c_str());
+			//}
+			//else if (info->Bytes == 2)
+			//{
+			//	printf("%04X %02X %02X    %s\t\t", m_cpu->PC, opCode, byte1, m_name.c_str());
+			//}
+			//else
+			//{
+			//	printf("%04X %02X %02X %02X %s\t\t", m_cpu->PC, opCode, byte1, byte2, m_name.c_str());
+			//}
 
-			printf("A:%02X X:%02X Y:%02X P:%02X SP:%02X\n", m_cpu->Accumulator, m_cpu->XReg, m_cpu->YReg, m_cpu->ProcessorStatus, m_cpu->SP);
+			//printf("A:%02X X:%02X Y:%02X P:%02X SP:%02X\n", m_cpu->Accumulator, m_cpu->XReg, m_cpu->YReg, m_cpu->ProcessorStatus, m_cpu->SP);
 		}
 		else
 		{

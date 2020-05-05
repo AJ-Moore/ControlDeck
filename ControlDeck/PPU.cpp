@@ -12,7 +12,6 @@ namespace ControlDeck
 		m_primaryOAM.resize(0x100);
 		m_secondaryOAM.resize(0x20);
 		m_pixelBuffer.resize(256 * 240);
-		m_spriteBuffer.resize(256 * 240);
 	}
 
 	bool PPU::Init()
@@ -22,13 +21,14 @@ namespace ControlDeck
 			return false;
 		}
 
-		m_sdlWindow = SDL_CreateWindow("Control Deck", 100, 100, 256*3, 240*3, 0);
+		m_sdlWindow = SDL_CreateWindow("Control Deck", 100, 100, 256*3, 240*3, SDL_WINDOW_RESIZABLE);
 		m_sdlSurface = SDL_CreateRGBSurface(0,256, 240, 32, 0xff0000, 0x00ff00, 0x0000ff,0x0);
+		SDL_FillRect(m_sdlSurface, NULL, 0x000000);
+		SDL_UpdateWindowSurface(m_sdlWindow);
 	}
 
 	void PPU::Update()
 	{
-		SDL_PumpEvents();
 		LoadRegistersFromCPU();
 
 		if (m_currentScanline < 240)
@@ -44,8 +44,10 @@ namespace ControlDeck
 			PreRenderScanline();
 		}
 
-		if (m_currentScanline == 240)
+		if (m_currentScanline == 260 && m_currentCycle == 0)
 		{
+			SDL_PumpEvents();
+			m_cpu->UpdateInput();
 			Render();
 		}
 
@@ -62,11 +64,12 @@ namespace ControlDeck
 
 	void PPU::Render()
 	{
-		SDL_UnlockSurface(m_sdlSurface);
+		//SDL_UnlockSurface(m_sdlSurface);
 		SDL_BlitScaled(m_sdlSurface, nullptr, SDL_GetWindowSurface(m_sdlWindow), nullptr);
+		//SDL_BlitSurface(m_sdlSurface, nullptr, SDL_GetWindowSurface(m_sdlWindow), nullptr);
 		SDL_UpdateWindowSurface(m_sdlWindow);
 		//SDL_FillRect(m_sdlSurface, NULL, 0x000000);
-		SDL_LockSurface(m_sdlSurface);
+		//SDL_LockSurface(m_sdlSurface);
 	}
 
 	void PPU::WriteOAMByte(uint8 addr, uint8 data)
@@ -201,14 +204,8 @@ namespace ControlDeck
 		for (uint16 i = 0; i <= 0xFF; i += 4)
 		{
 			spritePosY = m_primaryOAM[i];
-			
-			// hack for time being 
-			if (spritePosY == 0)
-			{
-				continue;
-			}
 
-			if (std::abs((int)spritePosY - (int)m_currentScanline) <= 8)
+			if (std::abs((int)spritePosY - (int)scanline) <= 8)
 			{
 				if (m_totalSprites >= 8)
 				{
@@ -227,8 +224,6 @@ namespace ControlDeck
 		}
 	}
 
-	static int colour = 0;
-
 	void PPU::IncrementCycle()
 	{
 		m_currentCycle++;
@@ -241,7 +236,6 @@ namespace ControlDeck
 			if (m_currentScanline > 261)
 			{
 				m_currentScanline = 0;
-				colour++;
 			}
 		}
 	}
@@ -295,22 +289,26 @@ namespace ControlDeck
 		uint8 attributeTable = ReadMemory8(GetNametableAddress() + ATTRIB_OFFSET + (tileX + (tileY * 8)));
 		uint8 paletteIndex = (attributeTable >> ((subTileX * 2) + (subTileY * 4))) & 0x3;
 
+		uint8 pixel, pixel1, pixel2, posX, posY;
+
 		// Each 'tile' in the pattern table is 16 bytes, index * 16 to get location in table
 		for (int i = 0; i < 8; ++i)
 		{
 			uint16 address = patternAddress + (nameTableByte * 16) + i;
+			uint8 pixelMem1 = ReadMemory8(address);
+			uint8 pixelMem2 = ReadMemory8(address + 8);
 
 			// Write each pixel to buffer
 			for (int p = 0;p < 8; ++p)
 			{
 				// get pixel left to right
-				uint8 pixel1 = (ReadMemory8(address) >> (0x1 * 7 - p)) & 0x1;
-				uint8 pixel2 = (ReadMemory8(address + 8) >> (0x1 * 7 - p)) & 0x1;
-				uint8 pixel = (pixel2 << 0x1) | pixel1;
+				pixel1 = (pixelMem1 >> (0x1 * 7 - p)) & 0x1;
+				pixel2 = (pixelMem2 >> (0x1 * 7 - p)) & 0x1;
+				pixel = (pixel2 << 0x1) | pixel1;
 
 				// Write to buffer, scanline + i = y m_currentCycle + p = x
-				uint posY = m_currentScanline + i;
-				uint posX = m_currentCycle + p;
+				posY = m_currentScanline + i;
+				posX = m_currentCycle + p;
 
 				uint pos = posX + (posY * 256);
 
@@ -324,17 +322,17 @@ namespace ControlDeck
 
 				if (m_ppuMask & (uint8)Mask::EmphasizeRed)
 				{
-					printf("");
+					throw("");
 				}
 
 				if (m_ppuMask & (uint8)Mask::EmphasizeGreen)
 				{
-					printf("");
+					throw("");
 				}
 
 				if (m_ppuMask & (uint8)Mask::EmphasizeBlue)
 				{
-					printf("");
+					throw("");
 				}
 
 				if (m_ppuMask & (uint8)Mask::Greyscale)
@@ -359,39 +357,49 @@ namespace ControlDeck
 
 	void PPU::DrawSprites()
 	{
-		// Todo add sprite priority - front back sorting
-		LoadSpritesForScanline(m_currentScanline);
-
-		// For each of the total number of sprites up to 8, sprites selected for this scanline
-		for (uint p = 0; p < m_totalSprites; ++p)
+		// draw 8 previous scanlines
+		for (uint scanline = 0; scanline < 8; scanline++)
 		{
-			uint8 yPosition = m_secondaryOAM[p * 4];
-			uint8 xPosition = m_secondaryOAM[(p * 4)+3];
-			uint8 patternOffset = m_secondaryOAM[(p * 4) + 1];
-			uint8 paletteIndex = m_secondaryOAM[(p * 4) + 2] & 0x3;
+			uint currentScanline = m_currentScanline - 8 + scanline;
 
-			if (m_currentScanline != yPosition )
-			{
-				continue;
-			}
+			// Todo add sprite priority - front back sorting
+			LoadSpritesForScanline(currentScanline);
 
-			// if 8x8 sprite byte 1 indicates pattern table tile index
-			if (m_ppuCTRL & (uint8)PPUCtrl::SpriteSize)
+			// For each of the total number of sprites up to 8, sprites selected for this scanline
+			for (uint p = 0; p < m_totalSprites; ++p)
 			{
-				printf("Error: Unsupported sprite size");
-				throw("DIE");
-			}
-			else
-			{
-				for (uint i = 0; i < 8; ++i)
+				uint8 yPosition = m_secondaryOAM[p * 4] + 1;
+				uint8 xPosition = m_secondaryOAM[(p * 4) + 3];
+				uint8 patternOffset = m_secondaryOAM[(p * 4) + 1];
+				uint8 paletteIndex = m_secondaryOAM[(p * 4) + 2] & 0x3;
+				uint8 yOffset = currentScanline - yPosition ;
+
+				bool flipX = m_secondaryOAM[(p * 4) + 2] & 0x40;
+				bool flipY = m_secondaryOAM[(p * 4) + 2] & 0x80;
+
+				if (yOffset < 0)
 				{
+					continue;
+				}
+
+				// if 8x8 sprite byte 1 indicates pattern table tile index
+				if (m_ppuCTRL & (uint8)PPUCtrl::SpriteSize)
+				{
+					printf("Error: Unsupported sprite size 16x");
+					throw("DIE");
+				}
+				else
+				{
+
 					// get tile
 					uint16 patternAddress = (m_ppuCTRL & (uint8)PPUCtrl::SpritePatternAddress) ? 0x1000 : 0x0;
-					uint16 address = patternAddress + (patternOffset * 16) + i;
+					uint16 address = patternAddress + (patternOffset * 16) + scanline;
 
 					// Write each pixel to buffer
 					for (int q = 0; q < 8; ++q)
 					{
+						uint pixelOffset = (flipX) ? 8 - q : q;
+
 						// get pixel left to right
 						uint8 pixel1 = (ReadMemory8(address) >> (0x1 * 7 - q)) & 0x1;
 						uint8 pixel2 = (ReadMemory8(address + 8) >> (0x1 * 7 - q)) & 0x1;
@@ -399,8 +407,8 @@ namespace ControlDeck
 
 						// Write to buffer, scanline + i = y m_currentCycle + p = x
 						//uint posY = scanline + yOffset + i;
-						uint posY = yPosition + i + 1;
-						uint posX = xPosition + q;
+						uint posY = yPosition + scanline;
+						uint posX = xPosition + pixelOffset;
 
 						uint pos = posX + (posY * 256);
 
@@ -421,23 +429,28 @@ namespace ControlDeck
 								SetPPUStatus(PPUStatus::Sprite0Hit, true);
 							}
 
-							m_pixelBuffer[pos] = PALETTE[m_vram[PALETTE_SPRITE_ADR + (paletteIndex * 4) + pixel]];
+							m_pixelBuffer[pos] = PALETTE[m_vram[PALETTE_ADR + ((4 + paletteIndex) * 4) + pixel]];
 							putpixel(m_sdlSurface, posX, posY, m_pixelBuffer[pos]);
 						}
 					}
-				}
 					
-			}
 
+				}
+
+			}
 		}
+
 		
 	}
 
 	void PPU::VisibleScanline()
 	{
-		if (m_currentCycle == 255)
+		if (m_currentCycle == 256)
 		{
-			DrawSprites();
+			if (m_currentScanline % 8 == 0)
+			{
+				DrawSprites();
+			}
 		}
 
 		if (m_currentCycle < 256)

@@ -379,8 +379,6 @@ namespace ControlDeck {
 
 	void CPU::DebugOutput()
 	{
-
-
 	}
 
 	void CPU::Update()
@@ -389,14 +387,10 @@ namespace ControlDeck {
 		CheckForInterrupt();
 		uint8 opCode = ReadMemory8(PC);
 		m_instructions[opCode]->Execute(opCode);
-
-		UpdateInput();
-
 	}
 
 	void CPU::UpdateInput()
 	{
-		SDL_PumpEvents();
 		SDL_Event _event;
 		SDL_Scancode key;
 		const Uint8* keyState = SDL_GetKeyboardState(NULL);
@@ -433,7 +427,14 @@ namespace ControlDeck {
 				{
 					m_controller1Input |= (uint8)Controller::DOWN;
 				}
-
+				if (key == SDL_SCANCODE_RETURN)
+				{
+					m_controller1Input |= (uint8)Controller::START;
+				}
+				if (key == SDL_SCANCODE_0)
+				{
+					m_controller1Input |= (uint8)Controller::SELECT;
+				}
 				break;
 			case SDL_KEYUP:
 				key = _event.key.keysym.scancode;
@@ -461,6 +462,14 @@ namespace ControlDeck {
 				if (key == SDL_SCANCODE_DOWN)
 				{
 					m_controller1Input &= ~(uint8)Controller::DOWN;
+				}
+				if (key == SDL_SCANCODE_RETURN)
+				{
+					m_controller1Input &= ~(uint8)Controller::START;
+				}
+				if (key == SDL_SCANCODE_0)
+				{
+					m_controller1Input &= ~(uint8)Controller::SELECT;
 				}
 				break;
 			}
@@ -642,12 +651,13 @@ namespace ControlDeck {
 		{
 			//!< Minus the starting position and get the remainder of the addr / 8 in order to establish 
 			//!< the bytes that should be mirrored (mByte -> byte to be mirrored)
-			uint16 _mByte = (Addr - 0x2000) % 8;
+			uint16 mByte = (Addr - 0x2000) % 8;
+			this->RAM[0x2000 + mByte] = Data;
 
-			//!< For every byte in range $2000 - $3FFF (kinda) 
-			for (uint16 _m = _mByte; _m < 0x4000; _m += 8) {
-				this->RAM[0x2000 + _m] = Data;
-			}
+			////!< For every byte in range $2000 - $3FFF (kinda) 
+			//for (uint16 _m = mByte; _m < 0x4000; _m += 8) {
+			//	this->RAM[0x2000 + _m] = Data;
+			//}
 		}
 	}
 
@@ -675,6 +685,13 @@ namespace ControlDeck {
 				//WriteMemory8(Addr, input);
 				return input;
 			}
+		}
+
+		// Handle memory mirrored between $2000-$3FFF
+		if ((Addr < 0x4000) && (Addr >= 0x2000))
+		{
+			uint16 mByte = (Addr - 0x2000) % 8;
+			return RAM[0x2000 + mByte];
 		}
 
 		//if (Addr == PPU_STATUS_ADR)
