@@ -25,9 +25,12 @@ namespace ControlDeck
 		const std::vector<ubyte>& GetPRGBank(uint16 bankNumber);
 		const std::vector<ubyte>& GetCHRBank(uint16 bankNumber);
 
+		int GetNumVRamBanks() const { return m_vramBanks.size(); }
+
+	private:
 		const uint16 m_romBankSize = 16384;
 		const uint16 m_vramBankSize = 8192;
-	private:
+
 		bool m_bDoneLoad = false;
 		uint8 m_prgRomBanks = 0;
 		uint8 m_chrVRamBanks = 0;

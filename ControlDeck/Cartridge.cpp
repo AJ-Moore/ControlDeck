@@ -22,6 +22,7 @@ namespace ControlDeck
         if (file.read(buffer.data(), size))
         {
             // NES
+            printf("Control Deck - A Nintendo Entertainment System Emulator by Allan\n");
             printf("Loading: %s\n", nesFile.c_str());
             printf("================================\n");
             printf("%c", buffer[0]);
@@ -32,8 +33,10 @@ namespace ControlDeck
             // every rom has at least 1 16k 16384 byte rom bank
             printf("16k PRG Rom Banks: %i\n", buffer[4]);
             printf("8k CHR VRam Banks: %i\n", buffer[5]);
-            printf("8k Ram Banks: %i\n", buffer[8]);
+            //printf("8k Ram Banks: %i\n", buffer[8]);
             printf("Region pal/ntfc: %s\n", buffer[9] == 0 ? "PAL" : "NTFC");
+
+            printf("Mapper: %i\n", buffer[6] >> 4);
 
             m_prgRomBanks = buffer[4];
             m_chrVRamBanks = buffer[5];
@@ -82,7 +85,7 @@ namespace ControlDeck
             return std::vector<ubyte>();
         }
 
-        m_romBanks[bankNumber];
+        return m_romBanks[bankNumber];
     }
 
     const std::vector<ubyte>& Cartridge::GetCHRBank(uint16 bankNumber)
@@ -93,6 +96,6 @@ namespace ControlDeck
             return std::vector<ubyte>();
         }
 
-        m_vramBanks[bankNumber];
+        return m_vramBanks[bankNumber];
     }
 }

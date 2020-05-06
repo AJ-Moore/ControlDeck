@@ -75,17 +75,32 @@ $0000
 #include "ProcessorStatusFlags.h"
 #include "Cartridge.h"
 #include "PPU.h"
+#include "Instruction.h"
 
 namespace ControlDeck
 {
+	enum class Controller : uint8
+	{
+		A = 0x1, 
+		B = 0x2, 
+		SELECT = 0x4, 
+		START = 0x8,
+		UP = 0x10, 
+		DOWN = 0x20, 
+		LEFT = 0x40, 
+		RIGHT = 0x80
+	};
+
 	class CPU
 	{
+		friend class Instruction;
 	public:
 		CPU();
 		void Init();
 		void CheckForInterrupt();
 		void DebugOutput();
 		void Update();
+		void UpdateInput(); 
 
 		void LoadCartridge(Cartridge* cartridge);
 		void SetPPU(PPU* ppu) { m_ppu = ppu; }
@@ -96,9 +111,17 @@ namespace ControlDeck
 		void WriteMemory8(uint16 Addr, uint8 Data);
 
 		uint GetCPUCycles() const { return m_cycleCounter; }
+		void ResetCPUCycles() { m_cycleCounter = 0; }
+		void setNMI() { m_nmi = true; }
 
 	private:
 		PPU* m_ppu = nullptr;
+		std::vector<SharedPtr<Instruction>> m_instructions;
+
+		bool m_controllerLatched = false;
+		uint8 m_controllerReadBit = 0;
+		uint8 m_controller1Input = 0; 
+		uint8 m_controller2Input = 0;
 
 		/** Useful Constants - STACK(0x0100), PRGROM_UPPER(0xC000),PRGROM_LOWER(0x8000) **/
 		//!< The locations from which the stack, PRG ROM UPPER/ LOWER BANKS begin
@@ -117,6 +140,11 @@ namespace ControlDeck
 		static const uint16 PPU_ADR = 0x2006;
 		static const uint16 PPU_DATA_ADR = 0x2007;
 		static const uint16 OAM_DMA_ADR = 0x4014;
+		static const uint16 CONTROLLER1_ADR = 0x4016;
+		static const uint16 CONTROLLER2_ADR = 0x4017;
+
+		void AddInstruction(SharedPtr<Instruction> Instruction);
+		void InitInstructions();
 
 		void SetProcessorFlag(PFlags Flag, bool bEnabled);
 		void PushStack8(uint8 memory);
@@ -153,6 +181,9 @@ namespace ControlDeck
 		uint16 m_oamAddress = 0;
 		bool m_vramToggle = false;
 
+		// Interrupt
+		bool m_nmi = false;
+
 		//!< RAM - The CPUS memory/ ram 64KB total Address range from $0 - $FFFF
 		std::vector<ubyte> RAM;
 		
@@ -185,79 +216,79 @@ namespace ControlDeck
 #pragma region _Implied_Addressing_Mode_Instructions (25 instructions)
 /***Implied Addressing Mode Instructions***/
 	//!< Software Interrupt 
-		void BRK_$00();
+		void BRK_$00(AdrMode Mode);
 
 		//!< Clears Carry Flag C
-		void CLC_$18();
+		void CLC_$18(AdrMode Mode);
 
 		//!< Clear Decimal Flag D :: Note Decimal Mode not supported on 2A03/07 CPU
-		void CLD_$D8();
+		void CLD_$D8(AdrMode Mode);
 
 		//!< Clear Intterupt Disable Flag I
-		void CLI_$58();
+		void CLI_$58(AdrMode Mode);
 
 		//!< Clear Overflow Flag V
-		void CLV_$B8();
+		void CLV_$B8(AdrMode Mode);
 
 		//!< Decrement X register by one 
-		void DEX_$CA();
+		void DEX_$CA(AdrMode Mode);
 
 		//!< Decrement Y register by one 
-		void DEY_$88();
+		void DEY_$88(AdrMode Mode);
 
 		//!< Increment X register by one
-		void INX_$E8();
+		void INX_$E8(AdrMode Mode);
 
 		//!< Increment Y register by one 
-		void INY_$C8();
+		void INY_$C8(AdrMode Mode);
 
 		//!< Does Nothing :D
-		void NOP_$EA();
+		void NOP_$EA(AdrMode Mode);
 
 		//!< Push (A) Accumulator onto stack
-		void PHA_$48();
+		void PHA_$48(AdrMode Mode);
 
 		//!< Push Processor Status onto stack 
-		void PHP_$08();
+		void PHP_$08(AdrMode Mode);
 
 		//!< Pull from stack to (A) Accumulator
-		void PLA_$68();
+		void PLA_$68(AdrMode Mode);
 
 		//!< Pull from stack to (P) Processor Status
-		void PLP_$28();
+		void PLP_$28(AdrMode Mode);
 
 		//!< Return from interrupt
-		void RTI_$40();
+		void RTI_$40(AdrMode Mode);
 
 		//!< Return from Subroutine 
-		void RTS_$60();
+		void RTS_$60(AdrMode Mode);
 
 		//!< Set Carry Flag C
-		void SEC_$38();
+		void SEC_$38(AdrMode Mode);
 
 		//!< Set Decimal Flag D
-		void SED_$f8();
+		void SED_$f8(AdrMode Mode);
 
 		//!< Set Intterupt Disabled Flag
-		void SEI_$78();
+		void SEI_$78(AdrMode Mode);
 
 		//!< Transfer Accumulator to X register 
-		void TAX_$AA();
+		void TAX_$AA(AdrMode Mode);
 
 		//!< Transfer Accumulator to Y register
-		void TAY_$A8();
+		void TAY_$A8(AdrMode Mode);
 
 		//!< Transfer Stack Pointer to X register
-		void TSX_$BA();
+		void TSX_$BA(AdrMode Mode);
 
 		//!< Transfer X register to Accumulator 
-		void TXA_$8A();
+		void TXA_$8A(AdrMode Mode);
 
 		//!< Transfer X register to Stack Pointer 
-		void TXS_$9A();
+		void TXS_$9A(AdrMode Mode);
 
 		//!< Tranfer Y register to Accumulator 
-		void TYA_$98();
+		void TYA_$98(AdrMode Mode);
 #pragma endregion 
 
 		/*Add memory to Accumulator with carry*/
@@ -294,7 +325,7 @@ namespace ControlDeck
 		void JMP(AdrMode Mode);
 
 		/*JSR Jump to SubRoutine */
-		void JSR_$20(); //!< Absolute 
+		void JSR_$20(AdrMode Mode); //!< Absolute 
 
 		/*LDA - Load Memory Into Accumulator*/
 		void LDA(AdrMode Mode);
