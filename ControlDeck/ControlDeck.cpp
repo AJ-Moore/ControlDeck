@@ -9,8 +9,8 @@ using namespace ControlDeck;
 
 int main()
 {
-    SharedPtr<Cartridge> mario = std::make_shared<Cartridge>();
-    mario->Load(".\\mario.nes");
+    SharedPtr<Cartridge> rom = std::make_shared<Cartridge>();
+    rom->Load(".\\kong.nes");
 
     SharedPtr<CPU> cpu = std::make_shared<CPU>();
     SharedPtr<PPU> ppu = std::make_shared<PPU>(cpu.get());

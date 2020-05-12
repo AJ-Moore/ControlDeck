@@ -64,12 +64,8 @@ namespace ControlDeck
 
 	void PPU::Render()
 	{
-		//SDL_UnlockSurface(m_sdlSurface);
 		SDL_BlitScaled(m_sdlSurface, nullptr, SDL_GetWindowSurface(m_sdlWindow), nullptr);
-		//SDL_BlitSurface(m_sdlSurface, nullptr, SDL_GetWindowSurface(m_sdlWindow), nullptr);
 		SDL_UpdateWindowSurface(m_sdlWindow);
-		//SDL_FillRect(m_sdlSurface, NULL, 0x000000);
-		//SDL_LockSurface(m_sdlSurface);
 	}
 
 	void PPU::WriteOAMByte(uint8 addr, uint8 data)
@@ -122,26 +118,11 @@ namespace ControlDeck
 	{
 		m_ppuCTRL = m_cpu->ReadMemory8(PPU_CTRL_ADR);
 		m_ppuMask = m_cpu->ReadMemory8(PPU_MASK_ADR);
-		//m_ppuStatus = m_cpu->ReadMemory8(PPU_STATUS_ADR);
 		m_oamAddr = m_cpu->ReadMemory8(OAM_ADR);
-		//m_oamData = m_cpu->ReadMemory8(OAM_DATA_ADR);
-		//m_ppuScroll = m_cpu->ReadMemory8(PPU_SCROLL_ADR);
-		//m_ppuAddr = m_cpu->ReadMemory8(PPU_ADR);
-		//m_ppuData = m_cpu->ReadMemory8(PPU_DATA_ADR);
-		//m_oamDMA = m_cpu->ReadMemory8(OAM_DMA_ADR);
 	}
 
 	void PPU::WriteRegistersToCPU()
 	{
-		//m_cpu->WriteMemory8(PPU_CTRL_ADR, m_ppuCTRL);
-		//m_cpu->WriteMemory8(PPU_MASK_ADR, m_ppuMask);
-		//m_cpu->WriteMemory8(PPU_STATUS_ADR, m_ppuStatus);
-		//m_cpu->WriteMemory8(OAM_ADR, m_oamAddr);
-		//m_cpu->WriteMemory8(OAM_DATA_ADR, m_oamData);
-		//m_cpu->WriteMemory8(PPU_SCROLL_ADR, m_ppuScroll);
-		//m_cpu->WriteMemory8(PPU_ADR, m_ppuAddr);
-		//m_cpu->WriteMemory8(PPU_DATA_ADR, m_ppuData);
-		//m_cpu->WriteMemory8(OAM_DMA_ADR, m_oamDMA);
 	}
 
 	uint8 PPU::ReadMemory8(uint16 Addr)

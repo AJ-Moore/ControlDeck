@@ -13,9 +13,6 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="Source Files\Rendering">
-      <UniqueIdentifier>{dd23b311-e90c-4bd8-ba7a-28611b5056ae}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source Files\CPU">
       <UniqueIdentifier>{540a99c9-a414-48f9-92e8-a7df10c3675a}</UniqueIdentifier>
     </Filter>

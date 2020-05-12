@@ -76,18 +76,18 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <ExecutablePath>F:\Programming\ControlDeck\libraries\dll\win64;$(ExecutablePath)</ExecutablePath>
-    <IncludePath>F:\Programming\ControlDeck\libraries\include;$(IncludePath)</IncludePath>
-    <LibraryPath>F:\Programming\ControlDeck\libraries\lib\win64;$(LibraryPath)</LibraryPath>
+    <ExecutablePath>$(SolutionDir)\libraries\dll\win64;$(ExecutablePath)</ExecutablePath>
+    <IncludePath>$(SolutionDir)\libraries\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)\libraries\lib\win64;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <ExecutablePath>F:\Programming\ControlDeck\libraries\dll\win64;$(ExecutablePath)</ExecutablePath>
-    <IncludePath>F:\Programming\ControlDeck\libraries\include;$(IncludePath)</IncludePath>
-    <LibraryPath>F:\Programming\ControlDeck\libraries\lib\win64;$(LibraryPath)</LibraryPath>
+    <ExecutablePath>$(SolutionDir)\libraries\dll\win64;$(ExecutablePath)</ExecutablePath>
+    <IncludePath>$(SolutionDir)\libraries\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)\libraries\lib\win64;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
