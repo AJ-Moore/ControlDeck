@@ -1,2 +1,2 @@
 # ControlDeck
-Nintendo Entertainment System Emulator - Developed purely for educational purposes to learn more about micro-controllers, Tests will be carried out using community developed test 'roms'. Not intended for use!
+Nintendo Entertainment System Emulator - Just barely working(with bugs) on a very select few games - requires more work.
