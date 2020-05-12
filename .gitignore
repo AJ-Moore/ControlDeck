@@ -220,3 +220,5 @@ builds/vs2015/Upsilon/Upsilon.VC.opendb
 
 [Rr]oms/
 *.nes
+
+enc_temp_folder/
