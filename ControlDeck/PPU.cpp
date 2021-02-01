@@ -16,20 +16,21 @@ namespace ControlDeck
 
 	bool PPU::Init()
 	{
-		if (SDL_Init(SDL_INIT_EVERYTHING) != 0)
+		if (SDL_Init(SDL_INIT_VIDEO) != 0)
 		{
 			return false;
 		}
-
-		m_sdlWindow = SDL_CreateWindow("Control Deck", 100, 100, 256*3, 240*3, SDL_WINDOW_RESIZABLE);
+		
+		m_sdlWindow = SDL_CreateWindow("Control Deck", 0, 0, 256*3, 240*3, SDL_WINDOW_RESIZABLE);
 		m_sdlSurface = SDL_CreateRGBSurface(0,256, 240, 32, 0xff0000, 0x00ff00, 0x0000ff,0x0);
 		SDL_FillRect(m_sdlSurface, NULL, 0x000000);
 		SDL_UpdateWindowSurface(m_sdlWindow);
+		return true;
 	}
 
 	void PPU::Update()
 	{
-		LoadRegistersFromCPU();
+		//LoadRegistersFromCPU();
 
 		if (m_currentScanline < 240)
 		{
@@ -52,7 +53,6 @@ namespace ControlDeck
 		}
 
 		IncrementCycle();
-		WriteRegistersToCPU();
 	}
 
 	void putpixel(SDL_Surface* surface, int x, int y, Uint32 Pixel)
@@ -64,6 +64,7 @@ namespace ControlDeck
 
 	void PPU::Render()
 	{
+		SDL_memcpy(m_sdlSurface->pixels, &m_pixelBuffer[0], sizeof(Uint32) * m_pixelBuffer.size());
 		SDL_BlitScaled(m_sdlSurface, nullptr, SDL_GetWindowSurface(m_sdlWindow), nullptr);
 		SDL_UpdateWindowSurface(m_sdlWindow);
 	}
@@ -116,13 +117,9 @@ namespace ControlDeck
 
 	void PPU::LoadRegistersFromCPU()
 	{
-		m_ppuCTRL = m_cpu->ReadMemory8(PPU_CTRL_ADR);
-		m_ppuMask = m_cpu->ReadMemory8(PPU_MASK_ADR);
-		m_oamAddr = m_cpu->ReadMemory8(OAM_ADR);
-	}
-
-	void PPU::WriteRegistersToCPU()
-	{
+		m_ppuCTRL = m_cpu->RAM[PPU_CTRL_ADR];
+		m_ppuMask = m_cpu->RAM[PPU_MASK_ADR];
+		m_oamAddr = m_cpu->RAM[OAM_ADR];
 	}
 
 	uint8 PPU::ReadMemory8(uint16 Addr)
@@ -291,14 +288,7 @@ namespace ControlDeck
 				posY = m_currentScanline + i;
 				posX = m_currentCycle + p;
 
-				uint pos = posX + (posY * 256);
-
-				if (pos > m_pixelBuffer.size())
-				{
-					throw ("Out of range!");
-					return;
-				}
-				
+				uint pos = posX + (posY * 256);	
 				uint8 colour = 0;
 
 				if (m_ppuMask & (uint8)Mask::EmphasizeRed)
@@ -324,12 +314,12 @@ namespace ControlDeck
 				if (pixel == 0)
 				{
 					m_pixelBuffer[pos] = PALETTE[m_vram[PALETTE_ADR]];
-					putpixel(m_sdlSurface, posX, posY, PALETTE[m_vram[PALETTE_ADR]]);
+					//putpixel(m_sdlSurface, posX, posY, PALETTE[m_vram[PALETTE_ADR]]);
 				}
 				else
 				{
 					m_pixelBuffer[pos] = PALETTE[m_vram[PALETTE_ADR + (paletteIndex*4) + pixel]];
-					putpixel(m_sdlSurface, posX, posY, PALETTE[m_vram[PALETTE_ADR + (paletteIndex * 4) + pixel]]);
+					//putpixel(m_sdlSurface, posX, posY, PALETTE[m_vram[PALETTE_ADR + (paletteIndex * 4) + pixel]]);
 				}
 			}
 		}
@@ -393,12 +383,6 @@ namespace ControlDeck
 
 						uint pos = posX + (posY * 256);
 
-						if (pos >= m_pixelBuffer.size())
-						{
-							//throw ("Out of range!");
-							return;
-						}
-
 						if (pixel == 0)
 						{
 							//m_pixelBuffer[pos] = PALETTE[m_vram[PALETTE_ADR]];
@@ -411,7 +395,7 @@ namespace ControlDeck
 							}
 
 							m_pixelBuffer[pos] = PALETTE[m_vram[PALETTE_ADR + ((4 + paletteIndex) * 4) + pixel]];
-							putpixel(m_sdlSurface, posX, posY, m_pixelBuffer[pos]);
+							//putpixel(m_sdlSurface, posX, posY, m_pixelBuffer[pos]);
 						}
 					}
 					

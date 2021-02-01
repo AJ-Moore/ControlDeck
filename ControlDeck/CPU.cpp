@@ -36,11 +36,11 @@ namespace ControlDeck {
 	{
 		m_instructions.resize(0xFF);
 
-		SharedPtr<Instruction> BRK = std::make_shared<Instruction>("BRK", std::bind(&CPU::BRK_$00, this, std::placeholders::_1));
+		SharedPtr<Instruction> BRK = std::make_shared<Instruction>("BRK", &CPU::BRK_$00, this);
 		BRK->AddOperation(0x00, 1, 7, 0, AdrMode::IMPLIED);
 		AddInstruction(BRK);
 
-		SharedPtr<Instruction> ADC = std::make_shared<Instruction>("ADC", std::bind(&CPU::ADC, this, std::placeholders::_1));
+		SharedPtr<Instruction> ADC = std::make_shared<Instruction>("ADC", &CPU::ADC, this);
 		ADC->AddOperation(0x69, 2, 2, 0, AdrMode::IMMEDIATE);
 		ADC->AddOperation(0x65, 2, 3, 0, AdrMode::ZERO_PAGE);
 		ADC->AddOperation(0x75, 2, 4, 0, AdrMode::ZERO_PAGEX);
@@ -51,7 +51,7 @@ namespace ControlDeck {
 		ADC->AddOperation(0x71, 2, 5, 1, AdrMode::INDIRECT_INDEXED);
 		AddInstruction(ADC);
 
-		SharedPtr<Instruction> AND = std::make_shared<Instruction>("AND", std::bind(&CPU::AND, this, std::placeholders::_1));
+		SharedPtr<Instruction> AND = std::make_shared<Instruction>("AND", &CPU::AND, this);
 		AND->AddOperation(0x29, 2, 2, 0, AdrMode::IMMEDIATE);
 		AND->AddOperation(0x25, 2, 3, 0, AdrMode::ZERO_PAGE);
 		AND->AddOperation(0x35, 2, 4, 0, AdrMode::ZERO_PAGEX);
@@ -62,7 +62,7 @@ namespace ControlDeck {
 		AND->AddOperation(0x31, 2, 5, 1, AdrMode::INDIRECT_INDEXED);
 		AddInstruction(AND);
 
-		SharedPtr<Instruction> ASL = std::make_shared<Instruction>("ASL", std::bind(&CPU::ASL, this, std::placeholders::_1));
+		SharedPtr<Instruction> ASL = std::make_shared<Instruction>("ASL", &CPU::ASL, this);
 		ASL->AddOperation(0x0A, 1, 2, 0, AdrMode::ACCUMULATOR);
 		ASL->AddOperation(0x06, 2, 5, 0, AdrMode::ZERO_PAGE);
 		ASL->AddOperation(0x16, 2, 6, 0, AdrMode::ZERO_PAGEX);
@@ -70,60 +70,60 @@ namespace ControlDeck {
 		ASL->AddOperation(0x1E, 3, 7, 0, AdrMode::ABSOLUTEX);
 		AddInstruction(ASL);
 
-		SharedPtr<Instruction> BCC = std::make_shared<Instruction>("BCC", std::bind(&CPU::BCC_$90, this, std::placeholders::_1));
+		SharedPtr<Instruction> BCC = std::make_shared<Instruction>("BCC", &CPU::BCC_$90, this);
 		BCC->AddOperation(0x90, 2, 2, 0, AdrMode::RELATIVE);
 		AddInstruction(BCC);
 
-		SharedPtr<Instruction> BCS = std::make_shared<Instruction>("BCS", std::bind(&CPU::BCS_$B0, this, std::placeholders::_1));
+		SharedPtr<Instruction> BCS = std::make_shared<Instruction>("BCS", &CPU::BCS_$B0, this);
 		BCS->AddOperation(0xB0, 2, 2, 0, AdrMode::RELATIVE);
 		AddInstruction(BCS);
 
-		SharedPtr<Instruction> BEQ = std::make_shared<Instruction>("BEQ", std::bind(&CPU::BEQ_$F0, this, std::placeholders::_1));
+		SharedPtr<Instruction> BEQ = std::make_shared<Instruction>("BEQ", &CPU::BEQ_$F0, this);
 		BEQ->AddOperation(0xF0, 2, 2, 0, AdrMode::RELATIVE);
 		AddInstruction(BEQ);
 
-		SharedPtr<Instruction> BIT = std::make_shared<Instruction>("BIT", std::bind(&CPU::BIT, this, std::placeholders::_1));
+		SharedPtr<Instruction> BIT = std::make_shared<Instruction>("BIT", &CPU::BIT, this);
 		BIT->AddOperation(0x24, 2, 3, 0, AdrMode::ZERO_PAGE);
 		BIT->AddOperation(0x2C, 3, 3, 0, AdrMode::ABSOLUTE);
 		AddInstruction(BIT);
 
-		SharedPtr<Instruction> BMI = std::make_shared<Instruction>("BMI", std::bind(&CPU::BMI_$30, this, std::placeholders::_1));
+		SharedPtr<Instruction> BMI = std::make_shared<Instruction>("BMI", &CPU::BMI_$30, this);
 		BMI->AddOperation(0x30, 2, 2, 0, AdrMode::RELATIVE);
 		AddInstruction(BMI);
 
-		SharedPtr<Instruction> BNE = std::make_shared<Instruction>("BNE", std::bind(&CPU::BNE_D0, this, std::placeholders::_1));
+		SharedPtr<Instruction> BNE = std::make_shared<Instruction>("BNE", &CPU::BNE_D0, this);
 		BNE->AddOperation(0xD0, 2, 2, 0, AdrMode::RELATIVE);
 		AddInstruction(BNE);
 
-		SharedPtr<Instruction> BPL = std::make_shared<Instruction>("BPL", std::bind(&CPU::BPL_$10, this, std::placeholders::_1));
+		SharedPtr<Instruction> BPL = std::make_shared<Instruction>("BPL", &CPU::BPL_$10, this);
 		BPL->AddOperation(0x10, 2, 2, 0, AdrMode::RELATIVE);
 		AddInstruction(BPL);
 
-		SharedPtr<Instruction> BVC = std::make_shared<Instruction>("BVC", std::bind(&CPU::BVC_$50, this, std::placeholders::_1));
+		SharedPtr<Instruction> BVC = std::make_shared<Instruction>("BVC", &CPU::BVC_$50, this);
 		BVC->AddOperation(0x50, 2, 2, 0, AdrMode::RELATIVE);
 		AddInstruction(BVC);
 
-		SharedPtr<Instruction> BVS = std::make_shared<Instruction>("BVS", std::bind(&CPU::BVS_$70, this, std::placeholders::_1));	
+		SharedPtr<Instruction> BVS = std::make_shared<Instruction>("BVS", &CPU::BVS_$70, this);
 		BVS->AddOperation(0x70, 2, 2, 0, AdrMode::RELATIVE);
 		AddInstruction(BVS);
 
-		SharedPtr<Instruction> CLC = std::make_shared<Instruction>("CLC", std::bind(&CPU::CLC_$18, this, std::placeholders::_1));
+		SharedPtr<Instruction> CLC = std::make_shared<Instruction>("CLC", &CPU::CLC_$18, this);
 		CLC->AddOperation(0x18, 1, 2, 0, AdrMode::IMPLIED);
 		AddInstruction(CLC);
 
-		SharedPtr<Instruction> CLD = std::make_shared<Instruction>("CLD", std::bind(&CPU::CLD_$D8, this, std::placeholders::_1));
+		SharedPtr<Instruction> CLD = std::make_shared<Instruction>("CLD", &CPU::CLD_$D8, this);
 		CLD->AddOperation(0xD8, 1, 2, 0, AdrMode::IMPLIED);
 		AddInstruction(CLD);
 
-		SharedPtr<Instruction> CLI = std::make_shared<Instruction>("CLI", std::bind(&CPU::CLI_$58, this, std::placeholders::_1));
+		SharedPtr<Instruction> CLI = std::make_shared<Instruction>("CLI", &CPU::CLI_$58, this);
 		CLI->AddOperation(0x58, 1, 2, 0, AdrMode::IMPLIED);
 		AddInstruction(CLI);
 
-		SharedPtr<Instruction> CLV = std::make_shared<Instruction>("CLV", std::bind(&CPU::CLV_$B8, this, std::placeholders::_1));
+		SharedPtr<Instruction> CLV = std::make_shared<Instruction>("CLV", &CPU::CLV_$B8, this);
 		CLV->AddOperation(0xB8, 1, 2, 0, AdrMode::IMPLIED);
 		AddInstruction(CLV);
 
-		SharedPtr<Instruction> CMP = std::make_shared<Instruction>("CMP", std::bind(&CPU::CMP, this, std::placeholders::_1));
+		SharedPtr<Instruction> CMP = std::make_shared<Instruction>("CMP", &CPU::CMP, this);
 		CMP->AddOperation(0xC9, 2, 2, 0, AdrMode::IMMEDIATE);
 		CMP->AddOperation(0xC5, 2, 3, 0, AdrMode::ZERO_PAGE);
 		CMP->AddOperation(0xD5, 2, 4, 0, AdrMode::ZERO_PAGEX);
@@ -134,34 +134,34 @@ namespace ControlDeck {
 		CMP->AddOperation(0xD1, 2, 5, 1, AdrMode::INDIRECT_INDEXED);
 		AddInstruction(CMP);
 
-		SharedPtr<Instruction> CPX = std::make_shared<Instruction>("CPX", std::bind(&CPU::CPX, this, std::placeholders::_1));
+		SharedPtr<Instruction> CPX = std::make_shared<Instruction>("CPX", &CPU::CPX, this);
 		CPX->AddOperation(0xE0, 2, 2, 0, AdrMode::IMMEDIATE);
 		CPX->AddOperation(0xE4, 2, 3, 0, AdrMode::ZERO_PAGE);
 		CPX->AddOperation(0xEC, 3, 4, 0, AdrMode::ABSOLUTE);
 		AddInstruction(CPX);
 
-		SharedPtr<Instruction> CPY = std::make_shared<Instruction>("CPY", std::bind(&CPU::CPY, this, std::placeholders::_1));
+		SharedPtr<Instruction> CPY = std::make_shared<Instruction>("CPY", &CPU::CPY, this);
 		CPY->AddOperation(0xC0, 2, 2, 0, AdrMode::IMMEDIATE);
 		CPY->AddOperation(0xC4, 2, 3, 0, AdrMode::ZERO_PAGE);
 		CPY->AddOperation(0xCC, 3, 4, 0, AdrMode::ABSOLUTE);
 		AddInstruction(CPY);
 
-		SharedPtr<Instruction> DEC = std::make_shared<Instruction>("DEC", std::bind(&CPU::DEC, this, std::placeholders::_1));
+		SharedPtr<Instruction> DEC = std::make_shared<Instruction>("DEC", &CPU::DEC, this);
 		DEC->AddOperation(0xC6, 2, 5, 0, AdrMode::ZERO_PAGE);
 		DEC->AddOperation(0xD6, 2, 6, 0, AdrMode::ZERO_PAGEX);
 		DEC->AddOperation(0xCE, 3, 6, 0, AdrMode::ABSOLUTE);
 		DEC->AddOperation(0xDE, 3, 7, 0, AdrMode::ABSOLUTEX);
 		AddInstruction(DEC);
 
-		SharedPtr<Instruction> DEX = std::make_shared<Instruction>("DEX", std::bind(&CPU::DEX_$CA, this, std::placeholders::_1));
+		SharedPtr<Instruction> DEX = std::make_shared<Instruction>("DEX", &CPU::DEX_$CA, this);
 		DEX->AddOperation(0xCA, 1, 2, 0, AdrMode::IMPLIED);
 		AddInstruction(DEX);
 
-		SharedPtr<Instruction> DEY = std::make_shared<Instruction>("DEY", std::bind(&CPU::DEY_$88, this, std::placeholders::_1));
+		SharedPtr<Instruction> DEY = std::make_shared<Instruction>("DEY", &CPU::DEY_$88, this);
 		DEY->AddOperation(0x88, 1, 2, 0, AdrMode::IMPLIED);
 		AddInstruction(DEY);
 
-		SharedPtr<Instruction> EOR = std::make_shared<Instruction>("EOR", std::bind(&CPU::EOR, this, std::placeholders::_1));
+		SharedPtr<Instruction> EOR = std::make_shared<Instruction>("EOR", &CPU::EOR, this);
 		EOR->AddOperation(0x49, 2, 2, 0, AdrMode::IMMEDIATE);
 		EOR->AddOperation(0x45, 2, 3, 0, AdrMode::ZERO_PAGE);
 		EOR->AddOperation(0x55, 2, 4, 0, AdrMode::ZERO_PAGEX);
@@ -172,31 +172,31 @@ namespace ControlDeck {
 		EOR->AddOperation(0x51, 2, 5, 1, AdrMode::INDIRECT_INDEXED);
 		AddInstruction(EOR);
 
-		SharedPtr<Instruction> INC = std::make_shared<Instruction>("INC", std::bind(&CPU::INC, this, std::placeholders::_1));
+		SharedPtr<Instruction> INC = std::make_shared<Instruction>("INC", &CPU::INC, this);
 		INC->AddOperation(0xE6, 2, 2, 0, AdrMode::ZERO_PAGE);
 		INC->AddOperation(0xF6, 2, 3, 0, AdrMode::ZERO_PAGE);
 		INC->AddOperation(0xEE, 2, 4, 0, AdrMode::ABSOLUTE);
 		INC->AddOperation(0xFE, 3, 4, 0, AdrMode::ABSOLUTEX);
 		AddInstruction(INC);
 
-		SharedPtr<Instruction> INX = std::make_shared<Instruction>("INX", std::bind(&CPU::INX_$E8, this, std::placeholders::_1));
+		SharedPtr<Instruction> INX = std::make_shared<Instruction>("INX", &CPU::INX_$E8, this);
 		INX->AddOperation(0xE8, 1, 2, 0, AdrMode::IMPLIED);
 		AddInstruction(INX);
 
-		SharedPtr<Instruction> INY = std::make_shared<Instruction>("INY", std::bind(&CPU::INY_$C8, this, std::placeholders::_1));
+		SharedPtr<Instruction> INY = std::make_shared<Instruction>("INY", &CPU::INY_$C8, this);
 		INY->AddOperation(0xC8, 1, 2, 0, AdrMode::IMPLIED);
 		AddInstruction(INY);
 
-		SharedPtr<Instruction> JMP = std::make_shared<Instruction>("JMP", std::bind(&CPU::JMP, this, std::placeholders::_1));
+		SharedPtr<Instruction> JMP = std::make_shared<Instruction>("JMP", &CPU::JMP, this);
 		JMP->AddOperation(0x4C, 3, 3, 0, AdrMode::ABSOLUTE);
 		JMP->AddOperation(0x6C, 3, 5, 0, AdrMode::ABSOLUTE_INDIRECT);
 		AddInstruction(JMP);
 
-		SharedPtr<Instruction> JSR = std::make_shared<Instruction>("JSR", std::bind(&CPU::JSR_$20, this, std::placeholders::_1));
+		SharedPtr<Instruction> JSR = std::make_shared<Instruction>("JSR", &CPU::JSR_$20, this);
 		JSR->AddOperation(0x20, 3, 6, 0, AdrMode::ABSOLUTE);
 		AddInstruction(JSR);
 
-		SharedPtr<Instruction> LDA = std::make_shared<Instruction>("LDA", std::bind(&CPU::LDA, this, std::placeholders::_1));
+		SharedPtr<Instruction> LDA = std::make_shared<Instruction>("LDA", &CPU::LDA, this);
 		LDA->AddOperation(0xA9, 2, 2, 0, AdrMode::IMMEDIATE);
 		LDA->AddOperation(0xA5, 2, 3, 0, AdrMode::ZERO_PAGE);
 		LDA->AddOperation(0xB5, 2, 4, 0, AdrMode::ZERO_PAGEX);
@@ -207,7 +207,7 @@ namespace ControlDeck {
 		LDA->AddOperation(0xB1, 2, 5, 1, AdrMode::INDIRECT_INDEXED);
 		AddInstruction(LDA);
 
-		SharedPtr<Instruction> LDX = std::make_shared<Instruction>("LDX", std::bind(&CPU::LDX, this, std::placeholders::_1));
+		SharedPtr<Instruction> LDX = std::make_shared<Instruction>("LDX", &CPU::LDX, this);
 		LDX->AddOperation(0xA2, 2, 2, 0, AdrMode::IMMEDIATE);
 		LDX->AddOperation(0xA6, 2, 3, 0, AdrMode::ZERO_PAGE);
 		LDX->AddOperation(0xB6, 2, 4, 0, AdrMode::ZERO_PAGEY);
@@ -215,7 +215,7 @@ namespace ControlDeck {
 		LDX->AddOperation(0xBE, 3, 4, 1, AdrMode::ABSOLUTEY);
 		AddInstruction(LDX);
 
-		SharedPtr<Instruction> LDY = std::make_shared<Instruction>("LDY", std::bind(&CPU::LDY, this, std::placeholders::_1));
+		SharedPtr<Instruction> LDY = std::make_shared<Instruction>("LDY", &CPU::LDY, this);
 		LDY->AddOperation(0xA0, 2, 2, 0, AdrMode::IMMEDIATE);
 		LDY->AddOperation(0xA4, 2, 3, 0, AdrMode::ZERO_PAGE);
 		LDY->AddOperation(0xB4, 2, 4, 0, AdrMode::ZERO_PAGEX);
@@ -223,7 +223,7 @@ namespace ControlDeck {
 		LDY->AddOperation(0xBC, 3, 4, 1, AdrMode::ABSOLUTEX);
 		AddInstruction(LDY);
 
-		SharedPtr<Instruction> LSR = std::make_shared<Instruction>("LSR", std::bind(&CPU::LSR, this, std::placeholders::_1));
+		SharedPtr<Instruction> LSR = std::make_shared<Instruction>("LSR", &CPU::LSR, this);
 		LSR->AddOperation(0x4A, 1, 2, 0, AdrMode::ACCUMULATOR);
 		LSR->AddOperation(0x46, 2, 5, 0, AdrMode::ZERO_PAGE);
 		LSR->AddOperation(0x56, 2, 6, 0, AdrMode::ZERO_PAGEX);
@@ -231,11 +231,11 @@ namespace ControlDeck {
 		LSR->AddOperation(0x5E, 3, 7, 1, AdrMode::ABSOLUTEX);
 		AddInstruction(LSR);
 
-		SharedPtr<Instruction> NOP = std::make_shared<Instruction>("NOP", std::bind(&CPU::NOP_$EA, this, std::placeholders::_1));
+		SharedPtr<Instruction> NOP = std::make_shared<Instruction>("NOP", &CPU::NOP_$EA, this);
 		NOP->AddOperation(0xEA, 1, 2, 0, AdrMode::IMPLIED);
 		AddInstruction(NOP);
 
-		SharedPtr<Instruction> ORA = std::make_shared<Instruction>("ORA", std::bind(&CPU::ORA, this, std::placeholders::_1));
+		SharedPtr<Instruction> ORA = std::make_shared<Instruction>("ORA", &CPU::ORA, this);
 		ORA->AddOperation(0x09, 2, 2, 0, AdrMode::IMMEDIATE);
 		ORA->AddOperation(0x05, 2, 3, 0, AdrMode::ZERO_PAGE);
 		ORA->AddOperation(0x15, 2, 4, 0, AdrMode::ZERO_PAGEX);
@@ -246,23 +246,23 @@ namespace ControlDeck {
 		ORA->AddOperation(0x11, 2, 5, 1, AdrMode::INDIRECT_INDEXED);
 		AddInstruction(ORA);
 
-		SharedPtr<Instruction> PHA = std::make_shared<Instruction>("PHA", std::bind(&CPU::PHA_$48, this, std::placeholders::_1));
+		SharedPtr<Instruction> PHA = std::make_shared<Instruction>("PHA", &CPU::PHA_$48, this);
 		PHA->AddOperation(0x48, 1, 3, 0, AdrMode::IMPLIED);
 		AddInstruction(PHA);
 
-		SharedPtr<Instruction> PHP = std::make_shared<Instruction>("PHP", std::bind(&CPU::PHP_$08, this, std::placeholders::_1));
+		SharedPtr<Instruction> PHP = std::make_shared<Instruction>("PHP", &CPU::PHP_$08, this);
 		PHP->AddOperation(0x08, 1, 3, 0, AdrMode::IMPLIED);
 		AddInstruction(PHP);
 
-		SharedPtr<Instruction> PLA = std::make_shared<Instruction>("PLA", std::bind(&CPU::PLA_$68, this, std::placeholders::_1));
+		SharedPtr<Instruction> PLA = std::make_shared<Instruction>("PLA", &CPU::PLA_$68, this);
 		PLA->AddOperation(0x68, 1, 4, 0, AdrMode::IMPLIED);
 		AddInstruction(PLA);
 
-		SharedPtr<Instruction> PLP = std::make_shared<Instruction>("PLP", std::bind(&CPU::PLP_$28, this, std::placeholders::_1));
+		SharedPtr<Instruction> PLP = std::make_shared<Instruction>("PLP", &CPU::PLP_$28, this);
 		PLP->AddOperation(0x28, 1, 4, 0, AdrMode::IMPLIED);
 		AddInstruction(PLP);
 
-		SharedPtr<Instruction> ROL = std::make_shared<Instruction>("ROL", std::bind(&CPU::ROL, this, std::placeholders::_1));
+		SharedPtr<Instruction> ROL = std::make_shared<Instruction>("ROL", &CPU::ROL, this);
 		ROL->AddOperation(0x2A, 1, 2, 0, AdrMode::ACCUMULATOR);
 		ROL->AddOperation(0x26, 2, 5, 0, AdrMode::ZERO_PAGE);
 		ROL->AddOperation(0x36, 2, 6, 0, AdrMode::ZERO_PAGEX);
@@ -270,7 +270,7 @@ namespace ControlDeck {
 		ROL->AddOperation(0x3E, 3, 7, 1, AdrMode::ABSOLUTEX);
 		AddInstruction(ROL);
 
-		SharedPtr<Instruction> ROR = std::make_shared<Instruction>("ROR", std::bind(&CPU::ROR, this, std::placeholders::_1));
+		SharedPtr<Instruction> ROR = std::make_shared<Instruction>("ROR", &CPU::ROR, this);
 		ROR->AddOperation(0x6A, 1, 2, 0, AdrMode::ACCUMULATOR);
 		ROR->AddOperation(0x66, 2, 5, 0, AdrMode::ZERO_PAGE);
 		ROR->AddOperation(0x76, 2, 6, 0, AdrMode::ZERO_PAGEX);
@@ -278,15 +278,15 @@ namespace ControlDeck {
 		ROR->AddOperation(0x7E, 3, 7, 1, AdrMode::ABSOLUTEX);
 		AddInstruction(ROR);
 
-		SharedPtr<Instruction> RTI = std::make_shared<Instruction>("RTI", std::bind(&CPU::RTI_$40, this, std::placeholders::_1));
+		SharedPtr<Instruction> RTI = std::make_shared<Instruction>("RTI", &CPU::RTI_$40, this);
 		RTI->AddOperation(0x40, 1, 6, 0, AdrMode::IMPLIED);
 		AddInstruction(RTI);
 
-		SharedPtr<Instruction> RTS = std::make_shared<Instruction>("RTS", std::bind(&CPU::RTS_$60, this, std::placeholders::_1));
+		SharedPtr<Instruction> RTS = std::make_shared<Instruction>("RTS", &CPU::RTS_$60, this);
 		RTS->AddOperation(0x60, 1, 6, 0, AdrMode::IMPLIED);
 		AddInstruction(RTS);
 
-		SharedPtr<Instruction> SBC = std::make_shared<Instruction>("SBC", std::bind(&CPU::SBC, this, std::placeholders::_1));
+		SharedPtr<Instruction> SBC = std::make_shared<Instruction>("SBC", &CPU::SBC, this);
 		SBC->AddOperation(0xE9, 2, 2, 0, AdrMode::IMMEDIATE);
 		SBC->AddOperation(0xE5, 2, 3, 0, AdrMode::ZERO_PAGE);
 		SBC->AddOperation(0xF5, 2, 4, 0, AdrMode::ZERO_PAGEX);
@@ -297,19 +297,19 @@ namespace ControlDeck {
 		SBC->AddOperation(0xF1, 2, 5, 1, AdrMode::INDIRECT_INDEXED);
 		AddInstruction(SBC);
 
-		SharedPtr<Instruction> SEC = std::make_shared<Instruction>("SEC", std::bind(&CPU::SEC_$38, this, std::placeholders::_1));
+		SharedPtr<Instruction> SEC = std::make_shared<Instruction>("SEC", &CPU::SEC_$38, this);
 		SEC->AddOperation(0x38, 1, 2, 0, AdrMode::IMPLIED);
 		AddInstruction(SEC);
 
-		SharedPtr<Instruction> SED = std::make_shared<Instruction>("SED", std::bind(&CPU::SED_$f8, this, std::placeholders::_1));
+		SharedPtr<Instruction> SED = std::make_shared<Instruction>("SED", &CPU::SED_$f8, this);
 		SEC->AddOperation(0xF8, 1, 2, 0, AdrMode::IMPLIED);
 		AddInstruction(SED);
 
-		SharedPtr<Instruction> SEI = std::make_shared<Instruction>("SEI", std::bind(&CPU::SEI_$78, this, std::placeholders::_1));
+		SharedPtr<Instruction> SEI = std::make_shared<Instruction>("SEI", &CPU::SEI_$78, this);
 		SEI->AddOperation(0x78, 1, 2, 0, AdrMode::IMPLIED);
 		AddInstruction(SEI);
 
-		SharedPtr<Instruction> STA = std::make_shared<Instruction>("STA", std::bind(&CPU::STA, this, std::placeholders::_1));
+		SharedPtr<Instruction> STA = std::make_shared<Instruction>("STA", &CPU::STA, this);
 		STA->AddOperation(0x85, 2, 3, 0, AdrMode::ZERO_PAGE);
 		STA->AddOperation(0x95, 2, 4, 0, AdrMode::ZERO_PAGEX);
 		STA->AddOperation(0x8D, 3, 4, 0, AdrMode::ABSOLUTE);
@@ -319,39 +319,39 @@ namespace ControlDeck {
 		STA->AddOperation(0x91, 2, 6, 0, AdrMode::INDIRECT_INDEXED);
 		AddInstruction(STA);
 
-		SharedPtr<Instruction> STX = std::make_unique<Instruction>("STX", std::bind(&CPU::STX, this, std::placeholders::_1));
+		SharedPtr<Instruction> STX = std::make_shared<Instruction>("STX", &CPU::STX, this);
 		STX->AddOperation(0x86, 2, 3, 0, AdrMode::ZERO_PAGE);
 		STX->AddOperation(0x96, 2, 4, 0, AdrMode::ZERO_PAGEY);
 		STX->AddOperation(0x8E, 3, 4, 0, AdrMode::ABSOLUTE);
 		AddInstruction(STX);
 
-		SharedPtr<Instruction> STY = std::make_unique<Instruction>("STY", std::bind(&CPU::STY, this, std::placeholders::_1));
+		SharedPtr<Instruction> STY = std::make_shared<Instruction>("STY", &CPU::STY, this);
 		STY->AddOperation(0x84, 2, 3, 0, AdrMode::ZERO_PAGE);
 		STY->AddOperation(0x94, 2, 4, 0, AdrMode::ZERO_PAGEX);
 		STY->AddOperation(0x8C, 3, 4, 0, AdrMode::ABSOLUTE);
 		AddInstruction(STY);
 
-		SharedPtr<Instruction> TAX = std::make_unique<Instruction>("TAX", std::bind(&CPU::TAX_$AA, this, std::placeholders::_1));
+		SharedPtr<Instruction> TAX = std::make_shared<Instruction>("TAX", &CPU::TAX_$AA, this);
 		TAX->AddOperation(0xAA, 1, 2, 0, AdrMode::IMPLIED);
 		AddInstruction(TAX);
 
-		SharedPtr<Instruction> TAY = std::make_unique<Instruction>("TAY", std::bind(&CPU::TAY_$A8, this, std::placeholders::_1));
+		SharedPtr<Instruction> TAY = std::make_shared<Instruction>("TAY", &CPU::TAY_$A8, this);
 		TAY->AddOperation(0xA8, 1, 2, 0, AdrMode::IMPLIED);
 		AddInstruction(TAY);
 
-		SharedPtr<Instruction> TSX = std::make_unique<Instruction>("TSX", std::bind(&CPU::TSX_$BA, this, std::placeholders::_1));
+		SharedPtr<Instruction> TSX = std::make_shared<Instruction>("TSX", &CPU::TSX_$BA, this);
 		TSX->AddOperation(0xBA, 1, 2, 0, AdrMode::IMPLIED);
 		AddInstruction(TSX);
 
-		SharedPtr<Instruction> TXA = std::make_unique<Instruction>("TXA", std::bind(&CPU::TXA_$8A, this, std::placeholders::_1));
+		SharedPtr<Instruction> TXA = std::make_shared<Instruction>("TXA", &CPU::TXA_$8A, this);
 		TXA->AddOperation(0x8A, 1, 2, 0, AdrMode::IMPLIED);
 		AddInstruction(TXA);
 
-		SharedPtr<Instruction> TXS = std::make_unique<Instruction>("TXS", std::bind(&CPU::TXS_$9A, this, std::placeholders::_1));
+		SharedPtr<Instruction> TXS = std::make_shared<Instruction>("TXS", &CPU::TXS_$9A, this);
 		TXS->AddOperation(0x9A, 1, 2, 0, AdrMode::IMPLIED);
 		AddInstruction(TXS);
 
-		SharedPtr<Instruction> TYA = std::make_unique<Instruction>("TYA", std::bind(&CPU::TYA_$98, this, std::placeholders::_1));
+		SharedPtr<Instruction> TYA = std::make_shared<Instruction>("TYA", &CPU::TYA_$98, this);
 		TYA->AddOperation(0x98, 1, 2, 0, AdrMode::IMPLIED);
 		AddInstruction(TYA);
 	}
@@ -474,6 +474,32 @@ namespace ControlDeck {
 				break;
 			}
 		}
+
+#ifdef PSVITA
+		SceCtrlData ctrl;
+		sceCtrlPeekBufferPositive(0, &ctrl, 1);
+
+		SetControllerInput((uint8)Controller::START, ctrl.buttons & SCE_CTRL_START);
+		SetControllerInput((uint8)Controller::SELECT, ctrl.buttons & SCE_CTRL_SELECT);
+		SetControllerInput((uint8)Controller::A, ctrl.buttons & SCE_CTRL_CROSS);
+		SetControllerInput((uint8)Controller::B, ctrl.buttons & SCE_CTRL_CIRCLE);
+		SetControllerInput((uint8)Controller::UP, ctrl.buttons & SCE_CTRL_UP);
+		SetControllerInput((uint8)Controller::DOWN, ctrl.buttons & SCE_CTRL_DOWN);
+		SetControllerInput((uint8)Controller::LEFT, ctrl.buttons & SCE_CTRL_LEFT);
+		SetControllerInput((uint8)Controller::RIGHT, ctrl.buttons & SCE_CTRL_RIGHT);
+#endif
+	}
+
+	void CPU::SetControllerInput(uint8 input, bool down)
+	{
+		if (down)
+		{
+			m_controller1Input |= input;
+		}
+		else
+		{
+			m_controller1Input &= ~input;
+		}
 	}
 
 	void CPU::LoadCartridge(Cartridge* cartridge)
@@ -482,8 +508,9 @@ namespace ControlDeck {
 
 		m_loadedCartridge = cartridge;
 
-		const std::vector<ubyte> bank0 = cartridge->GetPRGBank(0);
-		const std::vector<ubyte> bank1 = cartridge->GetPRGBank(1);
+		// Default - Load the first rom bank into $8000 and last rom bank into $C000
+		const std::vector<uint8> bank0 = cartridge->GetPRGRomBank(0);
+		const std::vector<uint8> bank1 = cartridge->GetPRGRomBank(cartridge->GetNumPRGRomBanks() - 1);
 
 		for (int i = 0; i < bank0.size(); ++i)
 		{
@@ -494,7 +521,7 @@ namespace ControlDeck {
 		// load pattern tables into PPU
 		if (cartridge->GetNumVRamBanks() > 0)
 		{
-			const std::vector<ubyte> vrambank0 = cartridge->GetCHRBank(0);
+			const std::vector<uint8> vrambank0 = cartridge->GetCHRBank(0);
 
 			for (int i = 0; i < vrambank0.size(); ++i)
 			{
@@ -504,7 +531,8 @@ namespace ControlDeck {
 
 		if (cartridge->GetNumVRamBanks() > 1)
 		{
-			const std::vector<ubyte> vrambank1 = cartridge->GetCHRBank(1);
+			const std::vector<uint8> vrambank1 = cartridge->GetCHRBank(1);
+
 			for (int i = 0; i < vrambank1.size(); ++i)
 			{
 				m_ppu->WriteMemory8(0x1FFF + i, vrambank1[i]);
@@ -936,7 +964,7 @@ namespace ControlDeck {
 
 	/*ASL - Arithmetic Shift Left*/
 	void CPU::ASL(AdrMode Mode)
-	{ 
+	{
 		uint8 data = 0;
 
 		if (Mode == AdrMode::ACCUMULATOR)
@@ -1025,7 +1053,6 @@ namespace ControlDeck {
 
 	void CPU::JMP(AdrMode Mode)
 	{
- 
 		PC = ReadMemoryAddress(Mode);
 	}
 
@@ -1099,7 +1126,7 @@ namespace ControlDeck {
 		sum -= memory;
 		sum -= (1 - (ProcessorStatus & PFlags::CARRY));
 
-		bool overflow = false; 
+		bool overflow = false;
 
 		if ((Accumulator ^ sum) & (memory ^ sum) & PFlags::NEGATIVE)
 		{
@@ -1353,7 +1380,7 @@ namespace ControlDeck {
 
 		if (lsb == 0xFF)
 		{
-			uint16 msb = ReadMemory8(PC+1);
+			uint16 msb = ReadMemory8(PC + 1);
 
 			Adr = ReadMemory8(ReadMemory16(PC));
 			Adr |= (((uint16)ReadMemory8(msb << 8)) << 8);
@@ -1377,9 +1404,18 @@ namespace ControlDeck {
 
 	uint16 CPU::GetMemRelative()
 	{
-		PC+=2;
-		uint16 M = PC + (int8)ReadMemory8(PC-1);
-		return M;
+		PC += 2;
+		uint8 M = ReadMemory8(PC - 1);
+
+		if (M & 0x80)
+		{
+			M &= ~0x80;
+			return PC - (128 - M);
+		}
+		else
+		{
+			return PC + M;
+		}
 	}
 
 	uint16 CPU::GetMemIndexedIndirect()

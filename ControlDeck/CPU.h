@@ -79,28 +79,32 @@ $0000
 
 namespace ControlDeck
 {
+
+	class Instruction;
 	enum class Controller : uint8
 	{
-		A = 0x1, 
-		B = 0x2, 
-		SELECT = 0x4, 
+		A = 0x1,
+		B = 0x2,
+		SELECT = 0x4,
 		START = 0x8,
-		UP = 0x10, 
-		DOWN = 0x20, 
-		LEFT = 0x40, 
+		UP = 0x10,
+		DOWN = 0x20,
+		LEFT = 0x40,
 		RIGHT = 0x80
 	};
 
 	class CPU
 	{
 		friend class Instruction;
+		friend class PPU;
 	public:
 		CPU();
 		void Init();
 		void CheckForInterrupt();
 		void DebugOutput();
 		void Update();
-		void UpdateInput(); 
+		void UpdateInput();
+		void SetControllerInput(uint8 input, bool down);
 
 		void LoadCartridge(Cartridge* cartridge);
 		void SetPPU(PPU* ppu) { m_ppu = ppu; }
@@ -120,7 +124,7 @@ namespace ControlDeck
 
 		bool m_controllerLatched = false;
 		uint8 m_controllerReadBit = 0;
-		uint8 m_controller1Input = 0; 
+		uint8 m_controller1Input = 0;
 		uint8 m_controller2Input = 0;
 
 		/** Useful Constants - STACK(0x0100), PRGROM_UPPER(0xC000),PRGROM_LOWER(0x8000) **/
@@ -185,8 +189,8 @@ namespace ControlDeck
 		bool m_nmi = false;
 
 		//!< RAM - The CPUS memory/ ram 64KB total Address range from $0 - $FFFF
-		std::vector<ubyte> RAM;
-		
+		std::vector<uint8> RAM;
+
 		//!< PC - Program Counter - Holds the address of the next instruction, split into first 8 bits PCL, last 8 bits PCH
 		uint16 PC = PRGROM_UPPER;
 

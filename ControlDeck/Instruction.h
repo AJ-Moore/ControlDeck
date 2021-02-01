@@ -6,6 +6,32 @@
 
 namespace ControlDeck
 {
+	/** Abstract base class for binds*/
+	class Operation {
+	public:
+		Operation() {}
+		virtual void call(AdrMode val) = 0;
+	};
+
+	template <class T>
+	class Bind : public Operation{
+	public:
+		typedef void(T::* boundMethod)(AdrMode);
+		Bind(boundMethod Function, T* Obj) {
+			this->function = Function;
+			this->object = Obj;
+		}
+		~Bind() {}
+
+		void call(AdrMode val) {
+			(object->*function)(val);
+		}
+	private:
+		boundMethod function;
+		T* object;
+		Bind() { }
+	};
+
 	class InstructionInfo
 	{
 	public:
@@ -29,7 +55,12 @@ namespace ControlDeck
 	{
 		friend class CPU;
 	public:
-		Instruction(String Name, std::function<void(AdrMode)>);
+		template <class T>
+		Instruction(String Name, void(T::* Operation)(AdrMode), T* Obj) :
+			m_name(Name)
+		{
+			m_operation = std::make_shared<Bind<T>>(Operation, Obj);
+		}
 
 		virtual void Init() {}
 		virtual void Execute(uint8 opCode);
@@ -38,7 +69,6 @@ namespace ControlDeck
 		void SetInfo(String info) { m_info = info; }
 		String GetName() const { return m_name; }
 
-		void Bind(std::function<void(AdrMode)>);
 		void AddOperation(uint8 opCode, uint8 bytes, uint8 cycles, uint8 cylesPageBoundary, AdrMode mode);
 		std::vector<uint8> GetOpCodes() const;
 
@@ -47,7 +77,7 @@ namespace ControlDeck
 		String m_name = "ERR";
 		String m_info = "No Info given.";
 		std::vector<UniquePtr<InstructionInfo>> m_instructions;
-		std::function<void(AdrMode)> m_operation;
+		SharedPtr<Operation> m_operation;
 
 		const InstructionInfo* GetInstructionInfo(uint8 OpCode) const;
 	};
