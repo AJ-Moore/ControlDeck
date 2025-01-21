@@ -42,7 +42,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
@@ -149,6 +149,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -156,17 +157,21 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>SDL2main.lib;SDL2.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <LinkTimeCodeGeneration>Default</LinkTimeCodeGeneration>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="APU.cpp" />
     <ClCompile Include="Cartridge.cpp" />
     <ClCompile Include="ControlDeck.cpp" />
     <ClCompile Include="CPU.cpp" />
     <ClCompile Include="Instruction.cpp" />
     <ClCompile Include="PPU.cpp" />
+    <ClCompile Include="WaveformGenerator.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AddressingMode.h" />
+    <ClInclude Include="APU.h" />
     <ClInclude Include="Cartridge.h" />
     <ClInclude Include="Common.h" />
     <ClInclude Include="CPU.h" />
@@ -174,8 +179,11 @@
     <ClInclude Include="Palette.h" />
     <ClInclude Include="PPU.h" />
     <ClInclude Include="PPUCtrl.h" />
+    <ClInclude Include="PPUMask.h" />
+    <ClInclude Include="PPUStatus.h" />
     <ClInclude Include="ProcessorStatusFlags.h" />
     <ClInclude Include="Types.h" />
+    <ClInclude Include="WaveformGenerator.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

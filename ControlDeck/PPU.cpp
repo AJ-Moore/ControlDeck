@@ -16,20 +16,24 @@ namespace ControlDeck
 
 	bool PPU::Init()
 	{
-		if (SDL_Init(SDL_INIT_EVERYTHING) != 0)
+		if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) != 0)
 		{
+			printf("SDL initialisation failed!");
 			return false;
 		}
-
-		m_sdlWindow = SDL_CreateWindow("Control Deck", 100, 100, 256*3, 240*3, SDL_WINDOW_RESIZABLE);
+		
+		m_sdlWindow = SDL_CreateWindow("Control Deck", 0, 0, 256*3, 240*3, SDL_WINDOW_RESIZABLE);
 		m_sdlSurface = SDL_CreateRGBSurface(0,256, 240, 32, 0xff0000, 0x00ff00, 0x0000ff,0x0);
 		SDL_FillRect(m_sdlSurface, NULL, 0x000000);
 		SDL_UpdateWindowSurface(m_sdlWindow);
+		return true;
 	}
+
+	uint8 buffer = 0;
 
 	void PPU::Update()
 	{
-		LoadRegistersFromCPU();
+		//LoadRegistersFromCPU();
 
 		if (m_currentScanline < 240)
 		{
@@ -52,7 +56,6 @@ namespace ControlDeck
 		}
 
 		IncrementCycle();
-		WriteRegistersToCPU();
 	}
 
 	void putpixel(SDL_Surface* surface, int x, int y, Uint32 Pixel)
@@ -64,6 +67,7 @@ namespace ControlDeck
 
 	void PPU::Render()
 	{
+		SDL_memcpy(m_sdlSurface->pixels, &m_pixelBuffer[0], sizeof(Uint32) * m_pixelBuffer.size());
 		SDL_BlitScaled(m_sdlSurface, nullptr, SDL_GetWindowSurface(m_sdlWindow), nullptr);
 		SDL_UpdateWindowSurface(m_sdlWindow);
 	}
@@ -112,21 +116,53 @@ namespace ControlDeck
 		{
 			m_vram[Addr + 0x1000] = Data;
 		}
+
+		// Addresses $3F10/$3F14/$3F18/$3F1C are mirrors of $3F00/$3F04/$3F08/$3F0C
+		if (Addr == 0x3F10 || Addr == 0x3F00)
+		{
+			m_vram[0x3F10] = Data;
+			m_vram[0x3F00] = Data;
+		}
+
+		else if (Addr == 0x3F14 || Addr == 0x3F04)
+		{
+			m_vram[0x3F14] = Data;
+			m_vram[0x3F04] = Data;
+		}
+
+		else if (Addr == 0x3F18 || Addr == 0x3F08)
+		{
+			m_vram[0x3F18] = Data;
+			m_vram[0x3F08] = Data;
+		}
+
+		else if (Addr == 0x3F1C || Addr == 0x3F0C)
+		{
+			m_vram[0x3F1C] = Data;
+			m_vram[0x3F0C] = Data;
+		}
 	}
 
 	void PPU::LoadRegistersFromCPU()
 	{
-		m_ppuCTRL = m_cpu->ReadMemory8(PPU_CTRL_ADR);
-		m_ppuMask = m_cpu->ReadMemory8(PPU_MASK_ADR);
-		m_oamAddr = m_cpu->ReadMemory8(OAM_ADR);
+		m_ppuCTRL = m_cpu->RAM[PPU_CTRL_ADR];
+		m_ppuMask = m_cpu->RAM[PPU_MASK_ADR];
+		m_oamAddr = m_cpu->RAM[OAM_ADR];
 	}
 
-	void PPU::WriteRegistersToCPU()
+	uint8 PPU::ReadMemory8(uint16 Addr, bool memoryMappedIO)
 	{
-	}
+		if (Addr <= 0X3EFF )
+		{
+			uint data = buffer;
+			buffer = m_vram[Addr];
 
-	uint8 PPU::ReadMemory8(uint16 Addr)
-	{
+			if (memoryMappedIO)
+			{
+				return data;
+			}
+		}
+
 		return m_vram[Addr];
 	}
 
@@ -225,9 +261,15 @@ namespace ControlDeck
 	{
 		if (m_currentScanline == 241 && m_currentCycle == 1)
 		{
+			/// OAMADDR is set to 0 257-320 of pre-render and visible scanlines
+			m_oamAddr = 0;
+			m_cpu->WriteMemory8(OAM_ADR, m_oamAddr);
+			LoadRegistersFromCPU();
+
+
 			//SetPPUCtrl(PPUCtrl::VerticalBlanking, true);
 			SetPPUStatus(PPUStatus::VerticalBlank, true);
-			m_cpu->setNMI();
+			m_cpu->setNMI(true);
 		}
 	}
 
@@ -235,7 +277,8 @@ namespace ControlDeck
 	{
 		if (m_currentScanline == 261 && m_currentCycle == 1)
 		{
-			SetPPUStatus(PPUStatus::VerticalBlank, false);
+			//SetPPUStatus(PPUStatus::VerticalBlank, false);
+			m_cpu->setNMI(false);
 		}
 	}
 
@@ -260,9 +303,8 @@ namespace ControlDeck
 		uint8 nameTableByte = ReadMemory8(GetNametableAddress() + m_currentTile);
 		uint16 patternAddress = (m_ppuCTRL & (uint8)PPUCtrl::BackgroundPatternAddress) ? 0x1000 : 0x0;
 
-		uint8 tileX = m_currentCycle / 32;
+		uint8 tileX = (m_currentCycle / 32);
 		uint8 tileY = m_currentScanline / 32;
-
 		
 		uint8 subTileX = (m_currentCycle / 8) % 4 < 2 ? 0 : 1;
 		uint8 subTileY = (m_currentScanline / 8) % 4 < 2 ? 0 : 1;
@@ -288,35 +330,38 @@ namespace ControlDeck
 				pixel = (pixel2 << 0x1) | pixel1;
 
 				// Write to buffer, scanline + i = y m_currentCycle + p = x
-				posY = m_currentScanline + i;
-				posX = m_currentCycle + p;
+				posY = m_currentScanline + i + m_scrollY;
+				posX = m_currentCycle + p + m_scrollX;
 
-				uint pos = posX + (posY * 256);
-
-				if (pos > m_pixelBuffer.size())
+				if (posX >= 256)
 				{
-					throw ("Out of range!");
-					return;
+					continue;
 				}
-				
+
+				if (posY >= 240)
+				{
+					continue;
+				}
+
+				uint pos = posX + (posY * 256);	
 				uint8 colour = 0;
 
-				if (m_ppuMask & (uint8)Mask::EmphasizeRed)
+				if (m_ppuMask & (uint8)PPUMask::EmphasizeRed)
 				{
 					throw("");
 				}
 
-				if (m_ppuMask & (uint8)Mask::EmphasizeGreen)
+				if (m_ppuMask & (uint8)PPUMask::EmphasizeGreen)
 				{
 					throw("");
 				}
 
-				if (m_ppuMask & (uint8)Mask::EmphasizeBlue)
+				if (m_ppuMask & (uint8)PPUMask::EmphasizeBlue)
 				{
 					throw("");
 				}
 
-				if (m_ppuMask & (uint8)Mask::Greyscale)
+				if (m_ppuMask & (uint8)PPUMask::Greyscale)
 				{
 					colour &= 0x30;
 				}
@@ -324,12 +369,12 @@ namespace ControlDeck
 				if (pixel == 0)
 				{
 					m_pixelBuffer[pos] = PALETTE[m_vram[PALETTE_ADR]];
-					putpixel(m_sdlSurface, posX, posY, PALETTE[m_vram[PALETTE_ADR]]);
+					//putpixel(m_sdlSurface, posX, posY, PALETTE[m_vram[PALETTE_ADR]]);
 				}
 				else
 				{
 					m_pixelBuffer[pos] = PALETTE[m_vram[PALETTE_ADR + (paletteIndex*4) + pixel]];
-					putpixel(m_sdlSurface, posX, posY, PALETTE[m_vram[PALETTE_ADR + (paletteIndex * 4) + pixel]]);
+					//putpixel(m_sdlSurface, posX, posY, PALETTE[m_vram[PALETTE_ADR + (paletteIndex * 4) + pixel]]);
 				}
 			}
 		}
@@ -342,6 +387,7 @@ namespace ControlDeck
 		for (uint scanline = 0; scanline < 8; scanline++)
 		{
 			uint currentScanline = m_currentScanline - 8 + scanline;
+			//uint currentScanline = m_currentScanline ;
 
 			// Todo add sprite priority - front back sorting
 			LoadSpritesForScanline(currentScanline);
@@ -375,6 +421,7 @@ namespace ControlDeck
 					// get tile
 					uint16 patternAddress = (m_ppuCTRL & (uint8)PPUCtrl::SpritePatternAddress) ? 0x1000 : 0x0;
 					uint16 address = patternAddress + (patternOffset * 16) + scanline;
+					//uint16 address = patternAddress + (patternOffset * 16) + (m_currentScanline % 8);
 
 					// Write each pixel to buffer
 					for (int q = 0; q < 8; ++q)
@@ -389,15 +436,10 @@ namespace ControlDeck
 						// Write to buffer, scanline + i = y m_currentCycle + p = x
 						//uint posY = scanline + yOffset + i;
 						uint posY = yPosition + scanline;
+						//uint posY = yPosition + (m_currentScanline % 8);
 						uint posX = xPosition + pixelOffset;
 
 						uint pos = posX + (posY * 256);
-
-						if (pos >= m_pixelBuffer.size())
-						{
-							//throw ("Out of range!");
-							return;
-						}
 
 						if (pixel == 0)
 						{
@@ -411,7 +453,7 @@ namespace ControlDeck
 							}
 
 							m_pixelBuffer[pos] = PALETTE[m_vram[PALETTE_ADR + ((4 + paletteIndex) * 4) + pixel]];
-							putpixel(m_sdlSurface, posX, posY, m_pixelBuffer[pos]);
+							//putpixel(m_sdlSurface, posX, posY, m_pixelBuffer[pos]);
 						}
 					}
 					
@@ -428,6 +470,11 @@ namespace ControlDeck
 	{
 		if (m_currentCycle == 256)
 		{
+			if (m_currentScanline == 0)
+			{
+				return;
+			}
+
 			if (m_currentScanline % 8 == 0)
 			{
 				DrawSprites();
@@ -439,15 +486,17 @@ namespace ControlDeck
 			if ((m_currentCycle % 8) == 0 && m_currentScanline % 8 == 0)
 			{
 				m_currentTile = (m_currentCycle / 8) + ((m_currentScanline / 8) * 32);
+				m_currentTile += m_coarseX;
+				m_currentTile += m_coarseY * 32;
 				DrawTile();
 			}
 		}	
 		else //(m_currentCycle >= 257 && m_currentCycle <= 320)
 		{
 			/// OAMADDR is set to 0 257-320 of pre-render and visible scanlines
-			m_oamAddr = 0;
-			m_cpu->WriteMemory8(OAM_ADR, m_oamAddr);
-			LoadRegistersFromCPU();
+			//m_oamAddr = 0;
+			//m_cpu->WriteMemory8(OAM_ADR, m_oamAddr);
+			//LoadRegistersFromCPU();
 		}
 	}
 
@@ -461,9 +510,9 @@ namespace ControlDeck
 		/// OAMADDR is set to 0 257-320 of pre-render and visible scanlines
 		if (m_currentCycle >= 257 && m_currentCycle <= 320)
 		{
-			m_oamAddr = 0;
-			m_cpu->WriteMemory8(OAM_ADR, m_oamAddr);
-			LoadRegistersFromCPU();
+			//m_oamAddr = 0;
+			//m_cpu->WriteMemory8(OAM_ADR, m_oamAddr);
+			//LoadRegistersFromCPU();
 		}
 
 		ClearVblank();

@@ -4,17 +4,25 @@
 #include "Cartridge.h"
 #include "CPU.h"
 #include "PPU.h"
+#include "APU.h"
+#include "WaveformGenerator.h"
 
 using namespace ControlDeck;
 
 int main()
 {
     SharedPtr<Cartridge> rom = std::make_shared<Cartridge>();
+    //rom->Load(".\\mario.nes");
+    //rom->Load(".\\scroll.nes");
+    //rom->Load(".\\roms\\Rockman.nes");
+    //rom->Load(".\\roms\\Millipede.nes");
     rom->Load(".\\kong.nes");
 
     SharedPtr<CPU> cpu = std::make_shared<CPU>();
     SharedPtr<PPU> ppu = std::make_shared<PPU>(cpu.get());
+    SharedPtr<APU> apu = std::make_shared<APU>(cpu.get());
     cpu->SetPPU(ppu.get());
+    apu->Init();
     
     if (!ppu->Init())
     {
@@ -35,24 +43,28 @@ int main()
     uint32_t last_tick_time = 0;
     uint32_t delta = 0;
 
+    //WaveformGenerator wave;
+    //wave.Init();
+
     while (bRunning)
     {
         for (uint i = 0; i < 30; ++i)
         {
             cpu->Update();
+            apu->Update();
         }
 
         cycles = cpu->GetCPUCycles() - prevCPUCycle;
         prevCPUCycle = cpu->GetCPUCycles();
 
         // 1 cpu cycle = 3 ppu cycles, little hacky for time being.
-        for (uint p = 0; p < cycles*3; ++p )
+        for (uint p = 0; p < cycles * 3; ++p )
         {
             ppu->Update();
 
             if (ppu->GetPPUCycles() == 260)
             {
-                break;
+               break;
             }
         }
 
@@ -67,7 +79,7 @@ int main()
             }
 
             cpu->ResetCPUCycles();
-            prevCPUCycle = 0;
+            //prevCPUCycle = 0;
         }
     }
 }
