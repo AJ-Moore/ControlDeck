@@ -21,13 +21,13 @@ namespace ControlDeck {
 		InitInstructions();
 	}
 
-	void CPU::AddInstruction(SharedPtr<Instruction> Instruction)
+	void CPU::AddInstruction(SharedPtr<Instruction> instruction)
 	{
-		std::vector<uint8> opcodes = Instruction->GetOpCodes();
+		std::vector<uint8> opcodes = instruction->GetOpCodes();
 
 		for (uint8 opcode : opcodes)
 		{
-			m_instructions[opcode] = Instruction;
+			m_instructions[opcode] = instruction;
 			m_instructions[opcode]->m_cpu = this;
 		}
 	}
@@ -365,13 +365,12 @@ namespace ControlDeck {
 
 		uint8 ppuCtrl = ReadMemory8(PPU_CTRL_ADR);
 
-		//if (ppuCtrl & (uint8)PPUCtrl::VerticalBlanking)
-		if (m_nmi)
+		// if bit 7 set of ppu ctrl skip nmi. 
+		// if (ppuCtrl & (uint8)PPUCtrl::VerticalBlanking)
+		if (m_nmi && (ppuCtrl & (uint8)PPUCtrl::VerticalBlanking))
 		{
 			PushStack16(PC);
 			PushStack8(ProcessorStatus);
-			ppuCtrl &= ~(uint8)PPUCtrl::VerticalBlanking;
-			WriteMemory8(PPU_CTRL_ADR, ppuCtrl);
 			PC = ReadMemory16(0xFFFA);
 			m_nmi = false;
 		}
@@ -505,13 +504,13 @@ namespace ControlDeck {
 	void CPU::LoadCartridge(Cartridge* cartridge)
 	{
 		// Does not support dynamic bank loading at present, games with more than 2 banks will not work
-
 		m_loadedCartridge = cartridge;
 
 		// Default - Load the first rom bank into $8000 and last rom bank into $C000
-		const std::vector<uint8> bank0 = cartridge->GetPRGRomBank(0);
-		const std::vector<uint8> bank1 = cartridge->GetPRGRomBank(cartridge->GetNumPRGRomBanks() - 1);
+		const std::vector<uint8>& bank0 = cartridge->GetPRGRomBank(0);
+		const std::vector<uint8>& bank1 = cartridge->GetPRGRomBank(cartridge->GetNumPRGRomBanks() - 1);
 
+		// Copy banks to PRGROM
 		for (int i = 0; i < bank0.size(); ++i)
 		{
 			RAM[PRGROM_LOWER + i] = bank0[i];
@@ -555,38 +554,67 @@ namespace ControlDeck {
 		}
 	}
 
-	/** CPU MEMORY READ & WRITE **/
-	void CPU::WriteMemory8(uint16 Addr, uint8 Data)
-	{
-		//if (m_cycleCounter < 29658)
-		//{
-		//	if (Addr == PPU_DATA_ADR || Addr == PPU_MASK_ADR || Addr == PPU_ADR || Addr == PPU_SCROLL_ADR)
-		//	{
-		//		return;
-		//	}
-		//}
+	uint8 buffered = 0;
 
-		RAM[Addr] = Data;
+	bool scrollmodefirstwrite = true;
+
+	/** CPU MEMORY READ & WRITE **/
+	void CPU::WriteMemory8(uint16 Addr, uint8 data)
+	{
+		if (m_startup)
+		{
+			if (m_cycleCounter < 29658)
+			{
+				if (Addr == PPU_DATA_ADR || Addr == PPU_MASK_ADR || Addr == PPU_COARSE_SCROLL_ADR || Addr == PPU_SCROLL_ADR)
+				{
+					return;
+				}
+			}
+		}
+
+		if (Addr >= 0x4000 && Addr <= 0x4010) {
+			//printf("wow\n");
+		}
+
 
 		if (Addr == CONTROLLER1_ADR)
 		{
-			if (Data == 0x1)
+			if (data == 0x1)
 			{
 				m_controllerLatched = true;
 			}
 		}
 
+		if (Addr == 0x2002 || Addr == 0x2003)
+		{
+			RAM[PPU_STATUS_ADR] = (RAM[PPU_STATUS_ADR] & 0x1F) | (data & 0xE0);
+		}
 		// Write lsb of data previous written into PPU registers into ppu status $2002 register
-		if ((Addr >= PPU_CTRL_ADR && Addr <= PPU_DATA_ADR) || Addr == OAM_DMA_ADR)
+		else if ((Addr >= PPU_CTRL_ADR && Addr < 0x2005) || Addr == OAM_DMA_ADR)
 		{
 			// Write lsb (5 bits) into PPUSTATUS register $2002
-			RAM[PPU_STATUS_ADR] = (RAM[PPU_STATUS_ADR] & 0xE0) | (Data & 0x1F);
+			//RAM[PPU_STATUS_ADR] = (RAM[PPU_STATUS_ADR] & 0xE0) | (Data & 0x1F);
+			RAM[PPU_STATUS_ADR] |= data;
+
+			if (Addr == 0x2000)
+			{
+				RAM[Addr] = data;
+			}
+
+			//if (Addr == 0x2007 || Addr == 0x2006 || Addr == 0x2005)
+			//{
+			//	RAM[Addr] = Data;
+			//}
+		}
+		else
+		{
+			RAM[Addr] = data;
 		}
 
 		// Write to PPUDATA $2700 - VRAM Address incremented by bit 2 of $2000 (cpu ctrl address) after read/ write
-		if (Addr == PPU_DATA_ADR || Addr == PPU_SCROLL_ADR)
+		if (Addr == PPU_DATA_ADR)// || Addr == PPU_SCROLL_ADR) // maybe not
 		{
-			m_ppu->WriteMemory8(m_vramAddress, Data);
+			m_ppu->WriteMemory8(m_vramAddress, data);
 
 			uint8 incrememnt = (this->RAM[PPU_CTRL_ADR] & (uint8)PPUCtrl::VRamAddressIncrement);
 			if (incrememnt)
@@ -601,23 +629,39 @@ namespace ControlDeck {
 			}
 		}
 
+		if (Addr == PPU_SCROLL_ADR)
+		{
+			if (scrollmodefirstwrite)
+			{
+				m_ppu->m_scrollX = 0xE0 & data;
+			}
+			else
+			{
+				m_ppu->m_scrollY = 0xE0 & data;
+			}
+
+			printf("%i\n", m_ppu->m_scrollX);
+
+			scrollmodefirstwrite = !scrollmodefirstwrite;
+		}
+
 		// Write OAM Address 
 		if (Addr == OAM_ADR)
 		{
-			m_oamAddress = Data;
+			m_oamAddress = data;
 		}
 
 		// Writes to OAM data $2004, increment OAMADDR after the write, reads during vertial or forced blanking return the value but don't increment
 		if (Addr == OAM_DATA_ADR)
 		{
-			m_ppu->WriteOAMByte(m_oamAddress, Data);
+			m_ppu->WriteOAMByte(m_oamAddress, data);
 			m_oamAddress++;
 		}
 
 		// OAM DMA $4014 - Initialise DMA
 		if (Addr == OAM_DMA_ADR)
 		{
-			uint16 start = 0x100 * Data;
+			uint16 start = 0x100 * data;
 			for (uint offset = 0; offset <= 0xFF; ++offset)
 			{
 				m_ppu->WriteOAMByte(offset, ReadMemory8(start + offset));
@@ -628,16 +672,24 @@ namespace ControlDeck {
 			m_oamAddress = 0xFF;
 		}
 
-		// $2006/ $2005
-		if (Addr == PPU_ADR || Addr == PPU_SCROLL_ADR)
+		// $2006/ $2005? maybe not
+		if (Addr == PPU_COARSE_SCROLL_ADR)// || Addr == PPU_SCROLL_ADR)
 		{
 			if (!m_vramToggle)
 			{
-				m_vramAddress = (uint16)Data << 8;
+				m_vramAddress = (uint16)data << 8;
+			
+				//Lower 5 bits.
+				m_ppu->m_scrollX = 0x1F & data;
+				
+				// upper 3 bits.
+				m_ppu->m_scrollY = 0xE0 & data;
+				//
+				//printf("%i\n", m_ppu->m_coarseX);
 			}
 			else
 			{
-				m_vramAddress |= Data;
+				m_vramAddress |= data;
 			}
 
 			m_vramToggle = !m_vramToggle;
@@ -650,23 +702,23 @@ namespace ControlDeck {
 			if (Addr < 0x0800)
 			{
 				//!< Mirroring at $0800, $1000 and $1800 
-				this->RAM[Addr + 0x0800] = Data;
-				this->RAM[Addr + 0x1000] = Data;
-				this->RAM[Addr + 0x1800] = Data;
+				this->RAM[Addr + 0x0800] = data;
+				this->RAM[Addr + 0x1000] = data;
+				this->RAM[Addr + 0x1800] = data;
 				return;
 			}
 			else if (Addr < 0x1000)
 			{
-				this->RAM[Addr - 0x0800] = Data;
-				this->RAM[Addr + 0x0800] = Data;
-				this->RAM[Addr + 0x1000] = Data;
+				this->RAM[Addr - 0x0800] = data;
+				this->RAM[Addr + 0x0800] = data;
+				this->RAM[Addr + 0x1000] = data;
 				return;
 			}
 			else if (Addr < 0x1800)
 			{
-				this->RAM[Addr - 0x1000] = Data;
-				this->RAM[Addr - 0x0800] = Data;
-				this->RAM[Addr + 0x0800] = Data;
+				this->RAM[Addr - 0x1000] = data;
+				this->RAM[Addr - 0x0800] = data;
+				this->RAM[Addr + 0x0800] = data;
 				return;
 			}
 		}
@@ -680,7 +732,11 @@ namespace ControlDeck {
 			//!< Minus the starting position and get the remainder of the addr / 8 in order to establish 
 			//!< the bytes that should be mirrored (mByte -> byte to be mirrored)
 			uint16 mByte = (Addr - 0x2000) % 8;
-			this->RAM[0x2000 + mByte] = Data;
+
+			if (mByte > 7)
+			{
+				RAM[0x2000 + mByte] = data;
+			}
 
 			////!< For every byte in range $2000 - $3FFF (kinda) 
 			//for (uint16 _m = mByte; _m < 0x4000; _m += 8) {
@@ -715,6 +771,36 @@ namespace ControlDeck {
 			}
 		}
 
+		if (Addr == PPU_DATA_ADR || Addr == PPU_SCROLL_ADR)
+		{
+			uint8 data = m_ppu->ReadMemory8(m_vramAddress, true);
+
+			uint8 incrememnt = (RAM[PPU_CTRL_ADR] & (uint8)PPUCtrl::VRamAddressIncrement);
+			if (incrememnt)
+			{
+				// Plus 32 to address 
+				m_vramAddress += 32;
+			}
+			else
+			{
+				// Plus 1 to address
+				m_vramAddress++;
+			}
+
+			return data;
+		}
+
+		// When a read from $2002 occurs, bit 7 is reset to 0 as are $2005 and $2006.
+		if (Addr == PPU_STATUS_ADR)
+		{
+			//RAM[PPU_STATUS_ADR] &= ~(uint8)PPUStatus::VerticalBlank;
+			////RAM[PPU_STATUS_ADR] &= ~(uint8)PPUStatus::Sprite0Hit;
+			//RAM[0x2005] = 0;
+			//RAM[0x2006] = 0;
+			m_vramToggle = false;
+			scrollmodefirstwrite = false;
+		}
+
 		// Handle memory mirrored between $2000-$3FFF
 		if ((Addr < 0x4000) && (Addr >= 0x2000))
 		{
@@ -722,12 +808,7 @@ namespace ControlDeck {
 			return RAM[0x2000 + mByte];
 		}
 
-		//if (Addr == PPU_STATUS_ADR)
-		//{
-		//	RAM[PPU_STATUS_ADR] &= ~(uint8)PPUStatus::VerticalBlank;
-		//}
-
-		return this->RAM[Addr];
+		return RAM[Addr];
 	}
 
 	uint16 CPU::ReadMemory16(uint16 Addr)

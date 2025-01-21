@@ -22,6 +22,9 @@
     <Filter Include="Source Files\Cartridge">
       <UniqueIdentifier>{5d6ef6c9-9312-4c30-92f5-c43bd4b2091c}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Sound">
+      <UniqueIdentifier>{3ee0e05b-be95-4e2d-8a67-da81afc91289}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ControlDeck.cpp">
@@ -38,6 +41,12 @@
     </ClCompile>
     <ClCompile Include="Instruction.cpp">
       <Filter>Source Files\CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="WaveformGenerator.cpp">
+      <Filter>Source Files\Sound</Filter>
+    </ClCompile>
+    <ClCompile Include="APU.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -70,6 +79,18 @@
     </ClInclude>
     <ClInclude Include="Instruction.h">
       <Filter>Source Files\CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="WaveformGenerator.h">
+      <Filter>Source Files\Sound</Filter>
+    </ClInclude>
+    <ClInclude Include="APU.h">
+      <Filter>Source Files\Sound</Filter>
+    </ClInclude>
+    <ClInclude Include="PPUStatus.h">
+      <Filter>Source Files\PPU</Filter>
+    </ClInclude>
+    <ClInclude Include="PPUMask.h">
+      <Filter>Source Files\PPU</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

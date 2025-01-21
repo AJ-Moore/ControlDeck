@@ -1,5 +1,7 @@
 // Copyright © Allan Moore April 2020
 
+#include <memory>
+
 #pragma once
 
 typedef unsigned char UNSIGNED_BYTE;

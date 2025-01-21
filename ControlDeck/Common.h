@@ -22,4 +22,6 @@ using UniquePtr = std::unique_ptr<T>;
 template <class T>
 using SharedPtr = std::shared_ptr<T>;
 
+constexpr auto PI = 3.1415926535897932385;
+
 #undef main

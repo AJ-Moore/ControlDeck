@@ -1,7 +1,7 @@
 #include "Instruction.h"
 #include "CPU.h"
 
-#define DEBUG_PRINT
+//#define DEBUG_PRINT
 
 namespace ControlDeck
 {

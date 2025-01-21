@@ -1,6 +1,8 @@
 #pragma once
 #include "Common.h"
 #include "PPUCtrl.h"
+#include "PPUStatus.h"
+#include "PPUMask.h"
 
 //PPU Memory
 //Address range	Size	Description
@@ -13,64 +15,8 @@
 //$3000 - $3EFF	$0F00	Mirrors of $2000 - $2EFF
 //$3F00 - $3F1F	$0020	Palette RAM indexes
 //$3F20 - $3FFF	$00E0	Mirrors of $3F00 - $3F1F
-
-
 namespace ControlDeck
 {
-	// 7  bit  0
-	// ---- ----
-	// VSO. ....
-	enum class PPUStatus : uint8
-	{
-		// O - Sprite Overflow - set if more that 8 sprites appear on scanline (apparently buggy clared dot 1 of pre-render)
-		SpriteOverflow = 0x20,
-
-		// S - Sprite 0 hit - set if nonzero pixel of sprite 0 overlaps non zero background pixel (cleared at dot 1 of pre-render)
-		Sprite0Hit = 0x40,
-
-		// V - Vertical blank has started 0: nope 1: yes (set at dot 1 line 241 (post render), cleared after reading $2002 and dot 1 pre-render)
-		VerticalBlank = 0x80,
-	};
-
-	//  7  bit  0
-	//	---- ----
-	//	BGRs bMmG
-	//	|||| ||||
-	//	|||| |||+-Greyscale(0: normal color, 1 : produce a greyscale display)
-	//	|||| ||+-- 1: Show background in leftmost 8 pixels of screen, 0 : Hide
-	//	|||| |+-- - 1 : Show sprites in leftmost 8 pixels of screen, 0 : Hide
-	//	|||| +---- 1 : Show background
-	//	|||+------ 1 : Show sprites
-	//	|| +------ - Emphasize red
-	//	| +--------Emphasize green
-	//	+ -------- - Emphasize blue
-	enum class Mask : uint8
-	{
-		// G - 0: normal colour, 1: greyscale
-		Greyscale = 0x1,
-
-		// m - 1: Show background in leftmost 8 pixels of screen 0: hide
-		BackgroundLeftmost8Pixels = 0x2, 
-
-		// M - 1: Show sprites in leftmost 8 pixels of screen 0: hide
-		SpritesLeftmost8Pixels = 0x4,
-
-		// b - Show background if set 
-		ShowBackground = 0x8, 
-
-		// s - Show sprites
-		ShowSprites = 0x10, 
-
-		// Emphasize red 
-		EmphasizeRed = 0x20,
-
-		// Emphasize green 
-		EmphasizeGreen = 0x40,
-
-		// Emphasize blue 
-		EmphasizeBlue = 0x80,
-	};
-
 	class CPU;
 
 	// 262 scanlines per frame 
@@ -94,12 +40,13 @@ namespace ControlDeck
 		void LoadRegistersFromCPU();
 
 	private:
-		uint8 ReadMemory8(uint16 Addr);
+		uint8 ReadMemory8(uint16 Addr, bool memoryMappedIO = false);
 
 
 		void SetPPUStatus(PPUStatus, bool bEnabled);
 		void SetPPUCtrl(PPUCtrl status, bool bEnabled);
 		uint8 GetBackgroundPaletteIndex();
+		uint8 ReadBufferedByte() {}
 
 		// Loads 8 sprites for current scanline into secondary oam
 		void LoadSpritesForScanline(uint scanline);
@@ -166,5 +113,9 @@ namespace ControlDeck
 		uint8 m_ppuData = 0;
 		uint8 m_oamDMA = 0;
 
+		uint8 m_scrollX = 0;
+		uint8 m_scrollY = 0;
+		uint8 m_coarseX = 0;
+		uint8 m_coarseY = 0;
 	};
 }

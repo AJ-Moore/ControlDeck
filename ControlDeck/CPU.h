@@ -115,8 +115,8 @@ namespace ControlDeck
 		void WriteMemory8(uint16 Addr, uint8 Data);
 
 		uint GetCPUCycles() const { return m_cycleCounter; }
-		void ResetCPUCycles() { m_cycleCounter = 0; }
-		void setNMI() { m_nmi = true; }
+		void ResetCPUCycles() { m_cycleCounter = 0; m_startup = false; }
+		void setNMI(bool value) { m_nmi = value; }
 
 	private:
 		PPU* m_ppu = nullptr;
@@ -141,7 +141,7 @@ namespace ControlDeck
 		static const uint16 OAM_ADR = 0x2003;
 		static const uint16 OAM_DATA_ADR = 0x2004;
 		static const uint16 PPU_SCROLL_ADR = 0x2005;
-		static const uint16 PPU_ADR = 0x2006;
+		static const uint16 PPU_COARSE_SCROLL_ADR = 0x2006;
 		static const uint16 PPU_DATA_ADR = 0x2007;
 		static const uint16 OAM_DMA_ADR = 0x4014;
 		static const uint16 CONTROLLER1_ADR = 0x4016;
@@ -179,6 +179,7 @@ namespace ControlDeck
 
 		Cartridge* m_loadedCartridge = nullptr;
 		uint32 m_cycleCounter = 0;
+		bool m_startup = true;
 
 		// Vram, oam address & toggle 
 		uint16 m_vramAddress = 0;

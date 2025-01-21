@@ -91,7 +91,7 @@ namespace ControlDeck
 
     const std::vector<uint8>& Cartridge::GetCHRBank(uint16 bankNumber)
     {
-        if (bankNumber > m_romBanks.size())
+        if (bankNumber > m_vramBanks.size())
         {
             throw("Unable to load bank from cartridge");
             return std::vector<uint8>();
